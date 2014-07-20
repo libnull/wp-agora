@@ -12,8 +12,7 @@ defined('ABSPATH') or die("No script kiddies please!");
  */
 include_once( 'wp-agora-toolbar.php' );
 
-function agora_create_tables()
-{
+function agora_create_tables() {
     global $wpdb;
 
     $agora_voters = $wpdb->prefix . 'agora_voters';
@@ -41,13 +40,28 @@ function agora_create_tables()
     $wpdb->query( $create_agora_campaigns_sql );
 }
 
+function agora_drop_tables() {
+    global $wpdb;
+
+    $agora_tables = array(
+        $wpdb->prefix . "agora_campaigns",
+        $wpdb->prefix . "agora_voters"
+    );
+
+    foreach ( $agora_tables as $table ) {
+        $wpdb->query( "DROP TABLE $table" );
+    }
+}
+
 register_activation_hook( __FILE__, 'agora_create_tables' );
+
+register_deactivation_hook( __FILE__, 'agora_drop_tables' );
 
 add_action( 'init', 'create_vote' );
 
-add_action( 'load-edit.php', 'wpse34956_force_excerpt' );
+add_action( 'load-edit.php', 'agora_force_excerpt' );
 
-function wpse34956_force_excerpt() {
+function agora_force_excerpt() {
     $_REQUEST['mode'] = 'excerpt';
 }
 

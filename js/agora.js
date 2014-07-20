@@ -31,6 +31,7 @@ jQuery(document).ready(function() {
 
             jQuery("#vote-chart").highcharts({
                 chart: {
+                    animation: false,
                     plotBackgroundColor: null,
                     plotBorderWidth: null,
                     plotShadow: false
