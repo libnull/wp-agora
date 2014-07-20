@@ -29,7 +29,7 @@ function agora_create_tables()
     $create_agora_campaigns_sql = "CREATE TABLE $agora_campaigns (
       camp_id bigint(20) NOT NULL AUTO_INCREMENT,
       vote_id bigint(20) NOT NULL,
-      voters text NOT NULL,
+      voters text DEFAULT NULL,
       vote_for text DEFAULT NULL,
       vote_against text DEFAULT NULL,
       vote_abstain text DEFAULT NULL,
@@ -130,12 +130,13 @@ $timezone = current_time( 'timestamp' );
     }
 }
 
-function agora_hide_publishing_actions(){
+function agora_hide_publishing_actions() {
     $post_type = 'vote';
 
     global $post;
 
-    if($post->post_type == $post_type){
+    if ( $post->post_type == $post_type ) {
+        print_r($post_type);
     }
 }
 add_action('admin_head-post.php', 'agora_hide_publishing_actions');
@@ -148,6 +149,18 @@ function wpse149143_edit_posts_views( $views ) {
     return $views;
 }
 
+function agora_register_voting( $post ) {
+    global $wpdb;
+
+    $wpdb->insert( $wpdb->prefix . "agora_campaigns", array(
+        'vote_id' => $post->ID,
+        'voters'  => maybe_serialize(array()),
+        'vote_for' => maybe_serialize(array()),
+        'vote_against' => maybe_serialize(array()),
+        'vote_abstain' => maybe_serialize(array()),
+    ) );
+}
+
 add_filter( 'views_edit-vote', 'wpse149143_edit_posts_views' );
 
 add_action( 'add_meta_boxes', 'agora_vote_options_add_custom_box' );
@@ -155,6 +168,8 @@ add_action( 'add_meta_boxes', 'agora_vote_options_add_custom_box' );
 add_action( 'save_post', 'agora_save_vote_options' );
 
 add_action( 'save_post', 'agora_save_deadline' );
+
+add_action( 'draft_to_publish', 'agora_register_voting' );
 
 function agora_vote_options_add_custom_box() {
     add_meta_box(
@@ -246,10 +261,11 @@ add_filter('manage_edit-vote_columns' , 'agora_columns', 10, 1);
 add_action( 'admin_enqueue_scripts', 'agora_admin_scripts');
 
 function agora_admin_scripts() {
-    wp_register_script( 'moment', plugins_url('js/moment.js', __FILE__) );
-    wp_register_script( 'countdown', plugins_url('js/countdown.min.js', __FILE__) );
-    wp_register_script( 'moment-countdown', plugins_url('js/moment-countdown.min.js', __FILE__), array( 'moment', 'countdown' ) );
-    wp_enqueue_script ( 'agora', plugins_url('js/agora.js', __FILE__), array( 'moment-countdown', 'jquery-ui-dialog' ) );
+    wp_register_script( 'highcharts', plugins_url( 'js/highcharts.js', __FILE__ ) );
+    wp_register_script( 'moment', plugins_url( 'js/moment.js', __FILE__ ) );
+    wp_register_script( 'countdown', plugins_url( 'js/countdown.min.js', __FILE__ ) );
+    wp_register_script( 'moment-countdown', plugins_url( 'js/moment-countdown.min.js', __FILE__ ), array( 'moment', 'countdown' ) );
+    wp_enqueue_script ( 'agora', plugins_url('js/agora.js', __FILE__), array( 'moment-countdown', 'jquery-ui-dialog', 'highcharts' ) );
     wp_enqueue_style ( 'wp-jquery-ui-dialog' );
 }
 
@@ -260,23 +276,36 @@ add_filter('views_edit-vote', function($args) { ?>
 });
 
 function agora_show_vote() {
+    global $wpdb;
+
     preg_match("/post=(\d+)/", $_POST['href'], $vote_id);
 
     $vote_id = intval($vote_id[1]);
+    $user_id = sha1( get_current_user_id() );
     $vote = get_post($vote_id);
-    $countdown = $_POST['countdown']; ?>
+    $agora_campaigns = $wpdb->prefix . "agora_campaigns";
+    $voters_registry = maybe_unserialize( $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
+    $countdown = $_POST['countdown'];
+    $has_voted = in_array( $user_id, $voters_registry ); ?>
 
-    <div class="vote-desc">
-        <h1><?php echo $vote->post_title; ?></h1>
-        <?php echo wpautop($vote->post_content); ?>
+<div class="vote-desc">
+    <h1><?php echo $vote->post_title; ?></h1>
+    <?php echo wpautop($vote->post_content); ?>
+</div>
+<div class="vote-tools">
+    <div id="vote-chart" style="width:300px;height:300px;"></div>
+    <?php if ( $has_voted ) : ?>
+    <p>Ya has votado</p>
+    <?php else : ?>
+    <div id="vote-action-buttons">
+        <a href="#" class="vote-action vote-yes dashicons dashicons-yes" data-vote="<?php echo $vote_id; ?>" data-decision="for"></a>
+        <a href="#" class="vote-action vote-no dashicons dashicons-no" data-vote="<?php echo $vote_id; ?>" data-decision="against"></a>
+        <a href="#" class="vote-action vote-abstain dashicons dashicons-minus" data-vote="<?php echo $vote_id; ?>" data-decision="abstain"></a>
     </div>
-    <div class="vote-tools">
-        <span class="vote-action vote-yes dashicons dashicons-yes" data-vote="<?php echo $vote_id; ?>"></span>
-        <span class="vote-action vote-no dashicons dashicons-no" data-vote="<?php echo $vote_id; ?>"></span>
-        <span class="vote-action vote-abstain dashicons dashicons-minus" data-vote="<?php echo $vote_id; ?>"></span>
-    </div>
+    <?php endif; ?>
+</div>
 <?php
-    die();
+die();
 }
 
 add_action( 'wp_ajax_show_vote', 'agora_show_vote');
@@ -284,25 +313,32 @@ add_action( 'wp_ajax_show_vote', 'agora_show_vote');
 function agora_submit_vote() {
     global $wpdb;
 
-    $agora_campaigns        = $wpdb->prefix . "agora_campaigns";
+    $agora_campaigns   = $wpdb->prefix . "agora_campaigns";
     $vote_id           = $_POST['vote_id'];
-    $voter_hashed_id   = sha1(get_current_user_id());
-    $voters_serialized = $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" );
-    $voters_unserialized = maybe_unserialize( $voters_serialized );
+    $vote_decision     = "vote_" . $_POST['vote_decision'];
+    $voter_hashed_id   = sha1( get_current_user_id() );
+    $votes_row         = $wpdb->get_results( "SELECT voters, vote_for, vote_against, vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" );
+    $votes_row         = $votes_row[0];
+    $voters_unserialized = maybe_unserialize( $votes_row->voters );
+    $votes_decision_unserialized = maybe_unserialize( $votes_row->$vote_decision );
 
     array_push($voters_unserialized, $voter_hashed_id );
+    array_push($votes_decision_unserialized, $voter_hashed_id );
 
     $voters_serialized = maybe_serialize( $voters_unserialized );
+    $votes_decision_serialized = maybe_serialize( $votes_decision_unserialized );
 
-    $wpdb->update( 'wp_agora_campaings', array(
+    $wpdb->update( 'wp_agora_campaigns', array(
         'voters' => $voters_serialized,
-        'votes_for' => $votes_for,
-        'votes_against' => $votes_against,
-        'votes_abstain' => $votes_abstain
+        $vote_decision => $votes_decision_serialized
     ), array(
         'vote_id' => $vote_id
     ) );
+
+    ?><div class="success-msg">Tu elección fue guardada</div><?php
+
+    die();
 }
 
-add_action( 'wp_ajax_show_vote', 'agora_submit_vote');
+add_action( 'wp_ajax_submit_vote', 'agora_submit_vote');
 ?>
