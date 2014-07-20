@@ -5,3 +5,34 @@
 #edit-slug-box {
     display: none;
 }
+.vote-desc {
+    float: left;
+    width: 500px;
+}
+.vote-desc h1 {
+    line-height: 1em;
+}
+.vote-desc p {
+    text-align: justify;
+}
+.vote-tools {
+    float: right;
+    width: 300px;
+}
+.vote-action {
+    color: #fff;
+    font-size: 40px;
+    line-height: 50px;
+    margin-right: 10px;
+    height: 50px;
+    width: 50px;
+}
+.vote-yes {
+    background: green;
+}
+.vote-no {
+    background: #c00;
+}
+.vote-abstain {
+    background: grey;
+}
