@@ -30,4 +30,10 @@ jQuery(document).ready(function(){
         });
     });
 
+    jQuery(".vote-action").click(function(event) {
+        jQuery.post(ajaxurl, {
+            action: 'submit_vote',
+            vote_id: jQuery(this).attr('data-vote')
+        });
+    });
 });

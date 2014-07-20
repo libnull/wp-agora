@@ -12,6 +12,37 @@ defined('ABSPATH') or die("No script kiddies please!");
  */
 include_once( 'wp-agora-toolbar.php' );
 
+function agora_create_tables()
+{
+    global $wpdb;
+
+    $agora_voters = $wpdb->prefix . 'agora_voters';
+    $agora_campaigns = $wpdb->prefix . 'agora_campaigns';
+
+    $create_agora_voters_sql = "CREATE TABLE $agora_voters (
+      voter_id bigint(20) NOT NULL AUTO_INCREMENT,
+      user_id bigint(20) NOT NULL,
+      PRIMARY KEY (voter_id),
+      UNIQUE KEY user_id (user_id)
+    );";
+
+    $create_agora_campaigns_sql = "CREATE TABLE $agora_campaigns (
+      camp_id bigint(20) NOT NULL AUTO_INCREMENT,
+      vote_id bigint(20) NOT NULL,
+      voters text NOT NULL,
+      vote_for text DEFAULT NULL,
+      vote_against text DEFAULT NULL,
+      vote_abstain text DEFAULT NULL,
+      PRIMARY KEY (camp_id),
+      UNIQUE KEY vote_id (vote_id)
+    );";
+
+    $wpdb->query( $create_agora_voters_sql );
+    $wpdb->query( $create_agora_campaigns_sql );
+}
+
+register_activation_hook( __FILE__, 'agora_create_tables' );
+
 add_action( 'init', 'create_vote' );
 
 add_action( 'load-edit.php', 'wpse34956_force_excerpt' );
@@ -42,7 +73,7 @@ function create_vote() {
             'exclude_from_search' => true,
             'publicly_quearyable' => false,
             'menu_icon' => 'dashicons-groups',
-            'supports' => array( 'title', 'editor', 'revisions' )
+            'supports' => array( 'title', 'revisions' )
         )
     );
 }
@@ -240,13 +271,38 @@ function agora_show_vote() {
         <?php echo wpautop($vote->post_content); ?>
     </div>
     <div class="vote-tools">
-        <span class="vote-action vote-yes dashicons dashicons-yes"></span>
-        <span class="vote-action vote-no dashicons dashicons-no"></span>
-        <span class="vote-action vote-abstain dashicons dashicons-minus"></span>
+        <span class="vote-action vote-yes dashicons dashicons-yes" data-vote="<?php echo $vote_id; ?>"></span>
+        <span class="vote-action vote-no dashicons dashicons-no" data-vote="<?php echo $vote_id; ?>"></span>
+        <span class="vote-action vote-abstain dashicons dashicons-minus" data-vote="<?php echo $vote_id; ?>"></span>
     </div>
 <?php
     die();
 }
 
 add_action( 'wp_ajax_show_vote', 'agora_show_vote');
+
+function agora_submit_vote() {
+    global $wpdb;
+
+    $agora_campaigns        = $wpdb->prefix . "agora_campaigns";
+    $vote_id           = $_POST['vote_id'];
+    $voter_hashed_id   = sha1(get_current_user_id());
+    $voters_serialized = $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" );
+    $voters_unserialized = maybe_unserialize( $voters_serialized );
+
+    array_push($voters_unserialized, $voter_hashed_id );
+
+    $voters_serialized = maybe_serialize( $voters_unserialized );
+
+    $wpdb->update( 'wp_agora_campaings', array(
+        'voters' => $voters_serialized,
+        'votes_for' => $votes_for,
+        'votes_against' => $votes_against,
+        'votes_abstain' => $votes_abstain
+    ), array(
+        'vote_id' => $vote_id
+    ) );
+}
+
+add_action( 'wp_ajax_show_vote', 'agora_submit_vote');
 ?>
