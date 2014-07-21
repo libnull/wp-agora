@@ -80,5 +80,4 @@ jQuery(document).ready(function() {
             jQuery("#vote-action-buttons").html(response);
         });
     });
-
 });

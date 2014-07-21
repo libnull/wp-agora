@@ -10,48 +10,11 @@ defined('ABSPATH') or die("No script kiddies please!");
  * Author URI: http://github.com/libnull
  * License: GPL3
  */
-include_once( 'wp-agora-toolbar.php' );
+require_once( 'wp-agora-db.php' );
 
-function agora_create_tables() {
-    global $wpdb;
+require_once( 'wp-agora-metabox-options.php' );
 
-    $agora_voters = $wpdb->prefix . 'agora_voters';
-    $agora_campaigns = $wpdb->prefix . 'agora_campaigns';
-
-    $create_agora_voters_sql = "CREATE TABLE $agora_voters (
-      voter_id bigint(20) NOT NULL AUTO_INCREMENT,
-      user_id bigint(20) NOT NULL,
-      PRIMARY KEY (voter_id),
-      UNIQUE KEY user_id (user_id)
-    );";
-
-    $create_agora_campaigns_sql = "CREATE TABLE $agora_campaigns (
-      camp_id bigint(20) NOT NULL AUTO_INCREMENT,
-      vote_id bigint(20) NOT NULL,
-      voters text DEFAULT NULL,
-      vote_for text DEFAULT NULL,
-      vote_against text DEFAULT NULL,
-      vote_abstain text DEFAULT NULL,
-      PRIMARY KEY (camp_id),
-      UNIQUE KEY vote_id (vote_id)
-    );";
-
-    $wpdb->query( $create_agora_voters_sql );
-    $wpdb->query( $create_agora_campaigns_sql );
-}
-
-function agora_drop_tables() {
-    global $wpdb;
-
-    $agora_tables = array(
-        $wpdb->prefix . "agora_campaigns",
-        $wpdb->prefix . "agora_voters"
-    );
-
-    foreach ( $agora_tables as $table ) {
-        $wpdb->query( "DROP TABLE $table" );
-    }
-}
+require_once( 'wp-agora-metabox-editor.php' );
 
 register_activation_hook( __FILE__, 'agora_create_tables' );
 
@@ -117,34 +80,43 @@ function agora_custom_bulk_actions( $actions ){
 
 add_filter('bulk_actions-edit-vote','agora_custom_bulk_actions');
 
-add_action( 'post_submitbox_misc_actions', 'article_or_box' );
-
-function article_or_box() {
+function agora_deadline_box() {
     global $post;
 
     if (get_post_type( $post ) == 'vote') :
         $timezone = current_time( 'timestamp' );
         $vote_deadline  = get_post_meta( $post->ID, 'vote-deadline', true );
-        $datetime = $vote_deadline != null ? new DateTime( $vote_deadline ) : date("Y-m-d H:i:s"); ?>
+        var_dump($vote_deadline);
+
+        if ( $vote_deadline != null && $vote_deadline != "" ) {
+            $datetime = new DateTime( $vote_deadline );
+        }
+        $date_day = isset( $datetime) ? $datetime->format( 'd' ) : date( 'd' );
+        $date_month = isset( $datetime) ? $datetime->format( 'm' ) : date( 'm' );
+        $date_year = isset( $datetime) ? $datetime->format( 'Y' ) : date( 'Y' );
+        $date_hour = isset( $datetime) ? $datetime->format( 'H' ) : date( 'H', $timezone );
+        $date_min = isset( $datetime) ? $datetime->format( 'i' ) : date( 'i', $timezone ); ?>
 
         <div class="misc-pub-section curtime misc-pub-curtime">
 
             <span id="timestamp">Cierra el</span>
             <div class="timestamp-wrap">
-                <input type="text" id="vote-deadline-date-day" name="vote-deadline-day" min="1" max="31" size="2" value="<?php echo $datetime->format( 'd' ); ?>" />.
+                <input type="text" id="vote-deadline-date-day" name="vote-deadline-day" min="1" max="31" size="2" value="<?php echo $date_day; ?>" />.
                 <select id="sca-date-month" name="vote-deadline-month">
                 <?php for ( $i = 1; $i <= 12; $i++ ) : ?>
-                    <option <?php echo ( $datetime->format( 'm' ) == $i ? 'selected="selected"' : '' ); ?> value="<?php echo $i; ?>"><?php echo date_i18n( 'F', strtotime( '01.' . $i . '.2013' ) ); ?></option>
+                    <option <?php echo ( $date_month == $i ? 'selected="selected"' : '' ); ?> value="<?php echo $i; ?>"><?php echo date_i18n( 'F', strtotime( '01.' . $i . '.2013' ) ); ?></option>
                 <?php endfor; ?>
                 </select>
-                <input type="text" id="vote-deadline-date-year" name="vote-deadline-year" size="4" min="<?php echo date( 'Y' ); ?>" value="<?php echo $datetime->format( 'Y' ); ?>" />
-                <input type="text" id="vote-deadline-date-hour" name="vote-deadline-hour" size="2" min="0" max="24" value="<?php echo $datetime->format( 'H' ); ?>" />:
-                <input type="text" id="vote-deadline-date-min" name="vote-deadline-min" size="2" min="0" max="60" value="<?php echo $datetime->format( 'i' ); ?>" />
+                <input type="text" id="vote-deadline-date-year" name="vote-deadline-year" size="4" min="<?php echo date( 'Y' ); ?>" value="<?php echo $date_year; ?>" />
+                <input type="text" id="vote-deadline-date-hour" name="vote-deadline-hour" size="2" min="0" max="24" value="<?php echo $date_hour; ?>" />:
+                <input type="text" id="vote-deadline-date-min" name="vote-deadline-min" size="2" min="0" max="60" value="<?php echo $date_min; ?>" />
             </div>
 
         </div> <?php
     endif;
 }
+
+add_action( 'post_submitbox_misc_actions', 'agora_deadline_box' );
 
 function agora_hide_publishing_actions() {
     $post_type = 'vote';
@@ -157,7 +129,7 @@ function agora_hide_publishing_actions() {
 add_action('admin_head-post.php', 'agora_hide_publishing_actions');
 add_action('admin_head-post-new.php', 'agora_hide_publishing_actions');
 
-function wpse149143_edit_posts_views( $views ) {
+function agora_edit_posts_views( $views ) {
     unset($views['publish']);
     unset($views['trash']);
 
@@ -176,93 +148,11 @@ function agora_register_voting( $post ) {
     ) );
 }
 
-add_filter( 'views_edit-vote', 'wpse149143_edit_posts_views' );
-
-add_action( 'add_meta_boxes', 'agora_add_meta_boxes' );
-
-add_action( 'save_post', 'agora_save_vote_options' );
+add_filter( 'views_edit-vote', 'agora_edit_posts_views' );
 
 add_action( 'save_post', 'agora_save_deadline' );
 
-add_action( 'draft_to_publish', 'agora_register_voting' );
-
-function agora_add_meta_boxes() {
-    add_meta_box(
-        'vote_options',
-        __( 'Opciones', 'agora' ),
-        'agora_vote_options_inner_custom_box',
-        'vote');
-
-    add_meta_box(
-        'vote_editor',
-        __( 'Descripción', 'agora' ),
-        'agora_vote_editor_box',
-        'vote');
-}
-
-function agora_vote_editor_box() {
-    global $post;
-
-    wp_editor( $post->post_content, 'agora_vote_editor', array(
-        'media_buttons' => false,
-        'textarea_rows' => 6,
-        'quicktags'     => false,
-    ) );
-}
-
-function agora_vote_options_inner_custom_box() {
-    global $post;
-
-    wp_nonce_field( plugin_basename( __FILE__ ), 'agora_vote_options_noncename' ); ?>
-
-    <div id="meta_inner"><?php
-
-    $vote_options = get_post_meta( $post->ID,'vote_options', true );
-
-    if ( count( $vote_options ) > 0 ) {
-        $c = 0;
-
-        foreach( $vote_options as $vote_option ) {
-            if ( isset( $vote_option['title'] ) ) { ?>
-                <p>Opción <input type="text" name="vote-options[<?php echo $c; ?>][title]" value="<?php echo $vote_option['title'] ?>" /><span class="remove"><?php echo __( 'Eliminar opción' ); ?></span></p><?php
-                $c = $c +1;
-            }
-        }
-    } ?>
-    <span id="here"></span>
-    <input type="button" value="<?php _e( 'Agregar opción' ) ?>" class="add button-secondary" />
-    <script>
-        var $ =jQuery.noConflict();
-        $(document).ready(function() {
-            var count = <?php echo $c; ?>;
-            $(".add").click(function() {
-                count = count + 1;
-
-                $('#here').append('<p> Opción <input type="text" name="options['+count+'][title]" value="" /> - Texto: <input type="text" name="options['+count+'][option]" value="" /><span class="remove">Eliminar Opción</span></p>' );
-                return false;
-            });
-            $(".remove").on('click', function() {
-                $(this).parent().remove();
-            });
-        });
-        </script>
-    </div><?php
-}
-
-function agora_save_vote_options( $post_id ) {
-    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
-        return;
-
-    if ( !isset( $_POST['agora_vote_options_noncename'] ) )
-        return;
-
-    if ( !wp_verify_nonce( $_POST['agora_vote_options_noncename'], plugin_basename( __FILE__ ) ) )
-        return;
-
-    $vote_options = $_POST['vote-options'];
-
-    update_post_meta( $post_id, 'vote-options', $vote_options );
-}
+add_action( 'publish_vote', 'agora_register_voting' );
 
 function agora_save_deadline( $post_id ) {
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
