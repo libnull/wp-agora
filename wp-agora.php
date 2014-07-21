@@ -86,7 +86,6 @@ function agora_deadline_box() {
     if (get_post_type( $post ) == 'vote') :
         $timezone = current_time( 'timestamp' );
         $vote_deadline  = get_post_meta( $post->ID, 'vote-deadline', true );
-        var_dump($vote_deadline);
 
         if ( $vote_deadline != null && $vote_deadline != "" ) {
             $datetime = new DateTime( $vote_deadline );
@@ -118,17 +117,6 @@ function agora_deadline_box() {
 
 add_action( 'post_submitbox_misc_actions', 'agora_deadline_box' );
 
-function agora_hide_publishing_actions() {
-    $post_type = 'vote';
-
-    global $post;
-
-    if ( $post->post_type == $post_type ) {
-    }
-}
-add_action('admin_head-post.php', 'agora_hide_publishing_actions');
-add_action('admin_head-post-new.php', 'agora_hide_publishing_actions');
-
 function agora_edit_posts_views( $views ) {
     unset($views['publish']);
     unset($views['trash']);
@@ -156,9 +144,6 @@ add_action( 'publish_vote', 'agora_register_voting' );
 
 function agora_save_deadline( $post_id ) {
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
-        return;
-
-    if ( !isset( $_POST['agora_vote_options_noncename'] ) )
         return;
 
     $deadline_day  = $_POST['vote-deadline-day'];
