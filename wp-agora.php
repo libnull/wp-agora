@@ -127,13 +127,19 @@ function agora_edit_posts_views( $views ) {
 function agora_register_voting( $post ) {
     global $wpdb;
 
-    $wpdb->insert( $wpdb->prefix . "agora_campaigns", array(
-        'vote_id' => $post->ID,
-        'voters'  => maybe_serialize(array()),
-        'vote_for' => maybe_serialize(array()),
-        'vote_against' => maybe_serialize(array()),
-        'vote_abstain' => maybe_serialize(array()),
-    ) );
+    $agora_campaigns_table = $wpdb->prefix . "agora_campaigns";
+    $check_vote_existence = $wpdb->get_results( "SELECT vote_id FROM $agora_campaigns_table WHERE vote_id=$post->ID" );
+    $is_new_vote = $check_vote_existence == null ? true : false;
+
+    if ( $is_new_vote ) {
+        $wpdb->insert( $agora_campaigns_table, array(
+            'vote_id' => $post->ID,
+            'voters'  => maybe_serialize(array()),
+            'vote_for' => maybe_serialize(array()),
+            'vote_against' => maybe_serialize(array()),
+            'vote_abstain' => maybe_serialize(array()),
+        ) );
+    }
 }
 
 add_filter( 'views_edit-vote', 'agora_edit_posts_views' );
