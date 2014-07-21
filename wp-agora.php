@@ -44,16 +44,33 @@ function create_vote() {
                 'add_new_item' => __( 'Añadir nueva votación' ),
                 'edit_item' => __( 'Editar votación' ),
                 'new_item' => __( 'Nueva votación' ),
+                'not_found' => __( 'No se encontraron votaciones' )
             ),
             'public' => true,
             'has_archive' => true,
             'exclude_from_search' => true,
             'publicly_quearyable' => false,
             'menu_icon' => 'dashicons-groups',
-            'supports' => array( 'title', 'revisions' )
+            'supports' => array( 'title', 'revisions' ),
+            'map_meta_cap' => true,
+            'capabilities' => array(
+                'read_posts' => 'read_votes',
+                'edit_posts' => 'edit_votes',
+                'edit_others_posts' => 'edit_others_votes'
+            ),
+            'capability_type' => array( 'vote', 'votes' )
         )
     );
 }
+
+function agora_subscriber_capabilities() {
+    $subscriber = get_role( 'subscriber' );
+
+    $subscriber->add_cap( 'read_votes' );
+    $subscriber->add_cap( 'edit_votes' );
+}
+
+add_action( 'admin_init', 'agora_subscriber_capabilities');
 
 function agora_remove_meta_boxes() {
     remove_meta_box('slugdiv', 'vote', 'core');
@@ -65,17 +82,13 @@ function agora_remove_actions( $actions, $post ) {
     if( $post->post_type == 'vote' ) {
         unset( $actions['inline hide-if-no-js'] );
         unset( $actions['view'] );
-        unset( $actions['trash'] );
     }
     return $actions;
 }
 add_filter( 'post_row_actions', 'agora_remove_actions', 10, 2 );
 
 function agora_custom_bulk_actions( $actions ){
-    unset( $actions['edit'] );
-    unset( $actions['trash'] );
-
-    return $actions;
+    return array();
 }
 
 add_filter('bulk_actions-edit-vote','agora_custom_bulk_actions');
@@ -117,14 +130,7 @@ function agora_deadline_box() {
 
 add_action( 'post_submitbox_misc_actions', 'agora_deadline_box' );
 
-function agora_edit_posts_views( $views ) {
-    unset($views['publish']);
-    unset($views['trash']);
-
-    return $views;
-}
-
-function agora_register_voting( $post ) {
+function agora_register_voting( $post_id, $post ) {
     global $wpdb;
 
     $agora_campaigns_table = $wpdb->prefix . "agora_campaigns";
@@ -142,24 +148,25 @@ function agora_register_voting( $post ) {
     }
 }
 
-add_filter( 'views_edit-vote', 'agora_edit_posts_views' );
-
 add_action( 'save_post', 'agora_save_deadline' );
 
-add_action( 'publish_vote', 'agora_register_voting' );
+add_action( 'publish_vote', 'agora_register_voting', 10, 2 );
 
 function agora_save_deadline( $post_id ) {
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
         return;
 
-    $deadline_day  = $_POST['vote-deadline-day'];
-    $deadline_month = $_POST['vote-deadline-month'];
-    $deadline_year = $_POST['vote-deadline-year'];
-    $deadline_hour = $_POST['vote-deadline-hour'];
-    $deadline_min  = $_POST['vote-deadline-min'];
-    $vote_deadline = $deadline_year . "-" . $deadline_month . "-" . $deadline_day . " " . $deadline_hour . ":" . $deadline_min . ":00";
+    if ( isset( $_POST['vote-deadline-day'] ) && isset( $_POST['vote-deadline-month'] ) && isset( $_POST['vote-deadline-year'] )
+        && isset( $_POST['vote-deadline-hour'] ) && isset( $_POST['vote-deadline-min'] ) ) {
+        $deadline_day  = $_POST['vote-deadline-day'];
+        $deadline_month = $_POST['vote-deadline-month'];
+        $deadline_year = $_POST['vote-deadline-year'];
+        $deadline_hour = $_POST['vote-deadline-hour'];
+        $deadline_min  = $_POST['vote-deadline-min'];
+        $vote_deadline = $deadline_year . "-" . $deadline_month . "-" . $deadline_day . " " . $deadline_hour . ":" . $deadline_min . ":00";
 
-    update_post_meta( $post_id, 'vote-deadline', $vote_deadline );
+        update_post_meta( $post_id, 'vote-deadline', $vote_deadline );
+    }
 }
 
 function agora_columns( $columns ) {
