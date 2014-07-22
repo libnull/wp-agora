@@ -225,9 +225,7 @@ function agora_admin_scripts() {
 
     wp_register_script( 'chart', plugins_url( 'js/chart.js', __FILE__ ) );
     wp_register_script( 'moment', plugins_url( 'js/moment.js', __FILE__ ) );
-    wp_register_script( 'countdown', plugins_url( 'js/countdown.min.js', __FILE__ ) );
-    wp_register_script( 'moment-countdown', plugins_url( 'js/moment-countdown.min.js', __FILE__ ), array( 'moment', 'countdown' ) );
-    wp_enqueue_script ( 'agora', plugins_url('js/agora.js', __FILE__), array( 'moment-countdown', 'jquery-ui-dialog', 'chart' ) );
+    wp_enqueue_script ( 'agora', plugins_url('js/agora.js', __FILE__), array( 'moment', 'jquery-ui-dialog', 'chart' ) );
     wp_enqueue_style ( 'wp-jquery-ui-dialog' );
 
     $is_admin = in_array( 'administrator', $current_user->roles ) ? "yes" : "no";
@@ -253,15 +251,17 @@ function agora_show_vote() {
     $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
     $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
     $countdown = $_POST['countdown'];
-    $has_voted = in_array( $user_id, $voters_registry ); ?>
+    $has_voted = in_array( $user_id, $voters_registry ) ? "true" : "false";
+    $is_poll   = is_array( $vote_options ) ? "true" : "false"; ?>
 
     <div class="vote-desc">
+        <input id="vote-is-poll" type="hidden" name="vote-is-poll" value="<?php echo $is_poll; ?>" />
         <h1><?php echo $vote->post_title; ?></h1>
         <?php if ( is_array( $vote_options ) ) : ?>
             <div class="vote-options">
                 <fieldset>
-                    <?php for ( $i = 0; $i < sizeof( $vote_options ); $i++ ) : ?>
-                    <label title='j F, Y'>
+                    <?php for ( $i = 1; $i <= sizeof( $vote_options ); $i++ ) : ?>
+                    <label title="<?php echo $vote_options[$i]; ?>">
                         <input type='radio' name='vote_chosen_option' value="<?php echo $i; ?>" /> <span><?php echo $vote_options[$i]; ?></span>
                     </label><br />
                     <?php endfor; ?>
@@ -278,11 +278,13 @@ function agora_show_vote() {
 
     <div class="vote-tools">
         <canvas id="voting_chart" width="250" height="250"></canvas>
-        <div id="vote-dates-counter">
-            <h3><?php echo $countdown; ?></h3>
+        <div id="agora-vote-dates-counter">
+            <div class="vote-deadline">
+                <h3>Finaliza <?php echo $countdown; ?></h3>
+            </div>
             <ul>
                 <li><span class="dashicons dashicons-calendar"></span> Publicada el <strong><?php echo $vote->post_date_gmt; ?></strong></li>
-                <li><span class="dashicons dashicons-clock"></span> Concluye el <strong><?php echo $vote_deadline; ?></strong></li>
+                <li><span class="dashicons dashicons-clock"></span> Abierta hasta el <strong><?php echo $vote_deadline; ?></strong></li>
                 <li><span class="dashicons dashicons-groups"></span> Han votado <strong><?php echo $voters_counter; ?> de 100 personas</strong></li>
             </ul>
         </div>
@@ -292,6 +294,18 @@ function agora_show_vote() {
 }
 
 add_action( 'wp_ajax_show_vote', 'agora_show_vote');
+
+add_action( 'wp_ajax_get_vote_status', 'agora_get_vote_status');
+
+function agora_get_vote_status() {
+    $vote_id = intval( $_POST['post_id'] );
+    $user_id = sha1( get_current_user_id() );
+    $has_voted = in_array( get_post_meta( $user_id, $vote_id, true ) );
+
+    echo $has_voted ? "has_voted" : "";
+
+    die();
+}
 
 function agora_submit_vote() {
     global $wpdb;
@@ -311,12 +325,12 @@ function agora_submit_vote() {
     $voters_serialized = maybe_serialize( $voters_unserialized );
     $votes_decision_serialized = maybe_serialize( $votes_decision_unserialized );
 
-    $wpdb->update( 'wp_agora_campaigns', array(
+    /*$wpdb->update( 'wp_agora_campaigns', array(
         'voters' => $voters_serialized,
         $vote_decision => $votes_decision_serialized
     ), array(
         'vote_id' => $vote_id
-    ) );
+    ) );*/
 
     ?><div class="success-msg">Tu elección fue guardada</div><?php
 

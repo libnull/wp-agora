@@ -75,6 +75,9 @@
     margin-top: 40px;
     position: relative;
 }
+#agora-vote-dates-counter li {
+    margin-bottom: 10px;
+}
 #agora-vote-options-wrapper input {
     font-size: 18px;
     height: 35px;
