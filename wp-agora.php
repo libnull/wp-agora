@@ -267,11 +267,13 @@ function agora_show_vote() {
                     <?php endfor; ?>
                 </fieldset>
             </div>
+        <?php endif;
+        if ( $vote->post_content != null && $vote->post_content != "" ) : ?>
+            <div id="agora-vote-desc-wrapper">
+                <h3>Argumentación</h3>
+                <?php echo wpautop($vote->post_content); ?>
+            </div>
         <?php endif; ?>
-        <div id="agora-vote-desc-wrapper">
-            <h3>Argumentación</h3>
-            <?php echo wpautop($vote->post_content); ?>
-        </div>
     </div>
 
     <div class="vote-tools">

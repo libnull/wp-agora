@@ -19,7 +19,8 @@
     text-align: justify;
 }
 .vote-tools {
-    float: right;
+    position: fixed;
+    margin-left: 555px;
     width: 300px;
 }
 #voting_chart {
@@ -72,6 +73,7 @@
 }
 #agora-vote-desc-wrapper {
     margin-top: 40px;
+    position: relative;
 }
 #agora-vote-options-wrapper input {
     font-size: 18px;
