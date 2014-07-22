@@ -54,9 +54,14 @@ function create_vote() {
             'supports' => array( 'title', 'revisions' ),
             'map_meta_cap' => true,
             'capabilities' => array(
-                'read_posts' => 'read_votes',
+                'edit_post' => 'edit_vote',
                 'edit_posts' => 'edit_votes',
-                'edit_others_posts' => 'edit_others_votes'
+                'edit_others_posts' => 'edit_other_votes',
+                'publish_posts' => 'publish_votes',
+                'edit_publish_posts' => 'edit_publish_votes',
+                'read_post' => 'read_votes',
+                'read_private_posts' => 'read_private_votes',
+                'delete_post' => 'delete_vote'
             ),
             'capability_type' => array( 'vote', 'votes' )
         )
@@ -64,10 +69,34 @@ function create_vote() {
 }
 
 function agora_subscriber_capabilities() {
-    $subscriber = get_role( 'subscriber' );
+    global $current_user;
 
-    $subscriber->add_cap( 'read_votes' );
+    $admin = get_role( 'administrator' );
+    $subscriber = get_role( 'subscriber' );
+    $caps = array(
+        'edit_vote',
+        'edit_votes',
+        'edit_other_votes',
+        'publish_votes',
+        'edit_published_votes',
+        'read_votes',
+        'read_private_votes',
+        'delete_vote'
+    );
+
+    foreach ($caps as $cap) {
+        $admin->add_cap( $cap );
+    }
+
+    $subscriber->add_cap( 'edit_vote' );
     $subscriber->add_cap( 'edit_votes' );
+    $subscriber->add_cap( 'read_votes' );
+    $subscriber->remove_cap( 'publish_votes' );
+    $subscriber->remove_cap( 'edit_published_votes' );
+
+    if ( in_array( 'subscriber', $current_user->roles ) ) {
+        remove_submenu_page( 'edit.php?post_type=vote', 'post-new.php?post_type=vote' );
+    }
 }
 
 add_action( 'admin_init', 'agora_subscriber_capabilities');
