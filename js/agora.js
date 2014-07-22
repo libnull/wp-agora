@@ -6,12 +6,39 @@ jQuery(document).ready(function() {
         'modal'         : true,
         'autoOpen'      : false,
         'closeOnEscape' : true,
-        'buttons'       : {
-            "Cerrar": function() {
-                jQuery(this).html('');
-                jQuery(this).dialog('close');
+        'buttons'       : [
+            {
+                text: "A favor",
+                click: function () {
+
+                },
+                class: "vote-button vote-yes",
+                icons: {
+                    primary: "dashicons dashicons-yes"
+                }
+            },
+            {
+                text: "En contra",
+                click: function () {
+
+                },
+                class: "vote-button vote-no",
+                icons: {
+                    primary: "dashicons dashicons-no"
+                }
+            },
+            {
+                text: "Me abstengo",
+                click: function () {
+
+                },
+                class: "vote-button vote-abstain",
+                icons: {
+                    primary: "dashicons dashicons-minus"
+                }
+
             }
-        },
+        ],
         'title'         : "Detalle de la propuesta",
         'height'        : 600,
         'width'         : 900,

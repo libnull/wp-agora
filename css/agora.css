@@ -20,20 +20,47 @@
     float: right;
     width: 300px;
 }
-.vote-action {
+.vote-button,
+.vote-button:hover {
     color: #fff;
-    font-size: 40px;
-    line-height: 50px;
-    margin-right: 10px;
-    height: 50px;
-    width: 50px;
+    box-shadow: none;
+    font-size: 16px;
+    height: 40px;
 }
 .vote-yes {
-    background: green;
+    background-color: rgb(118, 191, 49);
+    border-color: rgb(62, 120, 6);
+}
+.vote-yes:hover {
+    background-color: rgb(86, 165, 11);
 }
 .vote-no {
-    background: #c00;
+    background-color: rgb(203, 35, 35);
+    border-color: rgb(168, 7, 7);
+}
+.vote-no:hover {
+    background-color: rgb(204, 0, 0);
 }
 .vote-abstain {
-    background: grey;
+    background-color: #666;
+    border-color: #333;
+}
+.vote-abstain:hover {
+    background-color: #444;
+}
+.ui-icon {
+    display: inline;
+    font-size: 25px;
+    line-height: 30px;
+}
+.vote-options {
+    background: #f1f1f1;
+    padding: 10px;
+    border: 1px solid #e1e1e1;
+}
+.vote-options label {
+    line-height: 30px;
+}
+.vote-options span {
+    font-size: 16px;
 }

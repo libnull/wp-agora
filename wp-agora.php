@@ -185,6 +185,12 @@ add_action( 'save_post', 'agora_save_deadline' );
 
 add_action( 'publish_vote', 'agora_register_voting', 10, 2 );
 
+add_filter( 'content_save_pre', 'agora_save_description', 10, 1 );
+
+function agora_save_description( $content ) {
+    return wpautop( $_POST['agora_vote_editor'] );
+}
+
 function agora_save_deadline( $post_id ) {
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
         return;
@@ -225,8 +231,8 @@ function agora_admin_scripts() {
     wp_localize_script('agora', 'is_admin', $is_admin );
 }
 
-add_filter('views_edit-vote', function($args) { ?>
-    <div id="vote-detail"> </div><?php
+add_filter('views_edit-vote', function( $args ) { ?>
+    <div id="vote-detail"></div><?php
 
     return $args;
 });
@@ -239,27 +245,29 @@ function agora_show_vote() {
     $vote = get_post($vote_id);
     $agora_campaigns = $wpdb->prefix . "agora_campaigns";
     $voters_registry = maybe_unserialize( $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
+    $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
     $countdown = $_POST['countdown'];
     $has_voted = in_array( $user_id, $voters_registry ); ?>
 
-<div class="vote-desc">
-    <h1><?php echo $vote->post_title; ?></h1>
-    <?php echo wpautop($vote->post_content); ?>
-</div>
-<div class="vote-tools">
-    <div id="vote-chart" style="width:300px;height:300px;"></div>
-    <?php if ( $has_voted ) : ?>
-    <p>Ya has votado</p>
-    <?php else : ?>
-    <div id="vote-action-buttons">
-        <a href="#" class="vote-action vote-yes dashicons dashicons-yes" data-vote="<?php echo $vote_id; ?>" data-decision="for"></a>
-        <a href="#" class="vote-action vote-no dashicons dashicons-no" data-vote="<?php echo $vote_id; ?>" data-decision="against"></a>
-        <a href="#" class="vote-action vote-abstain dashicons dashicons-minus" data-vote="<?php echo $vote_id; ?>" data-decision="abstain"></a>
+    <div class="vote-desc">
+        <h1><?php echo $vote->post_title; ?></h1>
+        <div class="vote-options">
+            <fieldset>
+                <?php for ( $i = 0; $i < sizeof( $vote_options ); $i++ ) : ?>
+                <label title='j F, Y'>
+                    <input type='radio' name='vote_chosen_option' value="<?php echo $i; ?>" checked='checked' /> <span><?php echo $vote_options[$i]; ?></span>
+                </label><br />
+                <?php endfor; ?>
+            </fieldset>
+        </div>
+        <?php echo wpautop($vote->post_content); ?>
     </div>
-    <?php endif; ?>
-</div>
-<?php
-die();
+
+    <div class="vote-tools">
+        <div id="vote-chart" style="width:300px;height:300px;"></div>
+    </div> <?php
+
+    die();
 }
 
 add_action( 'wp_ajax_show_vote', 'agora_show_vote');
