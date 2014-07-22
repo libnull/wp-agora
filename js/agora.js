@@ -60,7 +60,10 @@ jQuery(document).ready(function() {
                         detail.dialog('option', 'buttons', button_disabled);
                     });
                 },
-                class: "vote-button vote-yes"
+                class: "vote-button vote-yes",
+                icons: {
+                    primary: "dashicons dashicons-yes"
+                }
             }
         ],
         button_disabled = [
