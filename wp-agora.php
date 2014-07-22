@@ -298,11 +298,23 @@ add_action( 'wp_ajax_show_vote', 'agora_show_vote');
 add_action( 'wp_ajax_get_vote_status', 'agora_get_vote_status');
 
 function agora_get_vote_status() {
-    $vote_id = intval( $_POST['post_id'] );
-    $user_id = sha1( get_current_user_id() );
-    $has_voted = in_array( get_post_meta( $user_id, $vote_id, true ) );
+    global $wpdb;
 
-    echo $has_voted ? "has_voted" : "";
+    $vote_id         = intval( $_POST['vote_id'] );
+    $user_id         = sha1( get_current_user_id() );
+    $agora_campaigns = $wpdb->prefix . "agora_campaigns";
+    $voters_registry = maybe_unserialize( $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
+    $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
+    $is_poll         = is_array( $vote_options ) ? true : false;
+    $vote_status     = array( 'has_voted' => "", 'is_poll' => "" );
+
+    if ( is_array( $voters_registry ) ) {
+        $vote_status['has_voted'] = in_array( $user_id, $voters_registry ) ? true : false;
+    }
+
+    $vote_status['is_poll'] = $is_poll ? true : false;
+
+    echo json_encode( $vote_status );
 
     die();
 }
@@ -325,14 +337,12 @@ function agora_submit_vote() {
     $voters_serialized = maybe_serialize( $voters_unserialized );
     $votes_decision_serialized = maybe_serialize( $votes_decision_unserialized );
 
-    /*$wpdb->update( 'wp_agora_campaigns', array(
+    $wpdb->update( 'wp_agora_campaigns', array(
         'voters' => $voters_serialized,
         $vote_decision => $votes_decision_serialized
     ), array(
         'vote_id' => $vote_id
-    ) );*/
-
-    ?><div class="success-msg">Tu elección fue guardada</div><?php
+    ) );
 
     die();
 }
