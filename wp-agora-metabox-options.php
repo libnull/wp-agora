@@ -22,7 +22,7 @@ function agora_editor_box() {
         if ( is_array( $options ) ) :
             foreach( $options as $item ) : ?>
                 <p>
-                    <input type="text" name="<?php echo $agora_option_name ?>[<?php echo $c ?>]" value="<?php echo $item ?>" size="60" />
+                    <input type="text" name="<?php echo $agora_option_name ?>[<?php echo $c ?>]" value="<?php echo $item ?>" placeholder="Ingresa la opción" size="60" />
                     <a href="#" class="remove">Eliminar</a>
                 </p><?php
                 $c = $c +1;
@@ -42,7 +42,7 @@ function agora_editor_box() {
 
                     count = count + 1;
 
-                    jQuery('#here').append('<p><input size="60" type="text" name="<?php echo $agora_option_name; ?>['+count+']" value=""> <a href="#" class="remove">Eliminar</a></p>');
+                    jQuery('#here').append('<p><input size="60" type="text" name="<?php echo $agora_option_name; ?>['+count+']" value="" placeholder="Ingresa la opción"> <a href="#" class="remove">Eliminar</a></p>');
 
                     return false;
                 });

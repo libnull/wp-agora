@@ -131,7 +131,7 @@ function agora_deadline_box() {
 
     if (get_post_type( $post ) == 'vote') :
         $timezone = current_time( 'timestamp' );
-        $vote_deadline  = get_post_meta( $post->ID, 'vote-deadline', true );
+        $vote_deadline  = get_post_meta( $post->ID, 'vote_deadline', true );
 
         if ( $vote_deadline != null && $vote_deadline != "" ) {
             $datetime = new DateTime( $vote_deadline );
@@ -188,7 +188,11 @@ add_action( 'publish_vote', 'agora_register_voting', 10, 2 );
 add_filter( 'content_save_pre', 'agora_save_description', 10, 1 );
 
 function agora_save_description( $content ) {
-    return wpautop( $_POST['agora_vote_editor'] );
+    if ( isset( $_POST['agora_vote_editor'] ) ) {
+        return wpautop( $_POST['agora_vote_editor'] );
+    } else {
+        return $content;
+    }
 }
 
 function agora_save_deadline( $post_id ) {
@@ -204,7 +208,7 @@ function agora_save_deadline( $post_id ) {
         $deadline_min  = $_POST['vote-deadline-min'];
         $vote_deadline = $deadline_year . "-" . $deadline_month . "-" . $deadline_day . " " . $deadline_hour . ":" . $deadline_min . ":00";
 
-        update_post_meta( $post_id, 'vote-deadline', $vote_deadline );
+        update_post_meta( $post_id, 'vote_deadline', $vote_deadline );
     }
 }
 
@@ -219,11 +223,11 @@ add_action( 'admin_enqueue_scripts', 'agora_admin_scripts');
 function agora_admin_scripts() {
     global $current_user;
 
-    wp_register_script( 'highcharts', plugins_url( 'js/highcharts.js', __FILE__ ) );
+    wp_register_script( 'chart', plugins_url( 'js/chart.js', __FILE__ ) );
     wp_register_script( 'moment', plugins_url( 'js/moment.js', __FILE__ ) );
     wp_register_script( 'countdown', plugins_url( 'js/countdown.min.js', __FILE__ ) );
     wp_register_script( 'moment-countdown', plugins_url( 'js/moment-countdown.min.js', __FILE__ ), array( 'moment', 'countdown' ) );
-    wp_enqueue_script ( 'agora', plugins_url('js/agora.js', __FILE__), array( 'moment-countdown', 'jquery-ui-dialog', 'highcharts' ) );
+    wp_enqueue_script ( 'agora', plugins_url('js/agora.js', __FILE__), array( 'moment-countdown', 'jquery-ui-dialog', 'chart' ) );
     wp_enqueue_style ( 'wp-jquery-ui-dialog' );
 
     $is_admin = in_array( 'administrator', $current_user->roles ) ? "yes" : "no";
@@ -245,26 +249,41 @@ function agora_show_vote() {
     $vote = get_post($vote_id);
     $agora_campaigns = $wpdb->prefix . "agora_campaigns";
     $voters_registry = maybe_unserialize( $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
+    $voters_counter  = sizeof( $voters_registry );
     $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
+    $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
     $countdown = $_POST['countdown'];
     $has_voted = in_array( $user_id, $voters_registry ); ?>
 
     <div class="vote-desc">
         <h1><?php echo $vote->post_title; ?></h1>
-        <div class="vote-options">
-            <fieldset>
-                <?php for ( $i = 0; $i < sizeof( $vote_options ); $i++ ) : ?>
-                <label title='j F, Y'>
-                    <input type='radio' name='vote_chosen_option' value="<?php echo $i; ?>" checked='checked' /> <span><?php echo $vote_options[$i]; ?></span>
-                </label><br />
-                <?php endfor; ?>
-            </fieldset>
+        <?php if ( is_array( $vote_options ) ) : ?>
+            <div class="vote-options">
+                <fieldset>
+                    <?php for ( $i = 0; $i < sizeof( $vote_options ); $i++ ) : ?>
+                    <label title='j F, Y'>
+                        <input type='radio' name='vote_chosen_option' value="<?php echo $i; ?>" /> <span><?php echo $vote_options[$i]; ?></span>
+                    </label><br />
+                    <?php endfor; ?>
+                </fieldset>
+            </div>
+        <?php endif; ?>
+        <div id="agora-vote-desc-wrapper">
+            <h3>Argumentación</h3>
+            <?php echo wpautop($vote->post_content); ?>
         </div>
-        <?php echo wpautop($vote->post_content); ?>
     </div>
 
     <div class="vote-tools">
-        <div id="vote-chart" style="width:300px;height:300px;"></div>
+        <canvas id="voting_chart" width="250" height="250"></canvas>
+        <div id="vote-dates-counter">
+            <h3><?php echo $countdown; ?></h3>
+            <ul>
+                <li><span class="dashicons dashicons-calendar"></span> Publicada el <strong><?php echo $vote->post_date_gmt; ?></strong></li>
+                <li><span class="dashicons dashicons-clock"></span> Concluye el <strong><?php echo $vote_deadline; ?></strong></li>
+                <li><span class="dashicons dashicons-groups"></span> Han votado <strong><?php echo $voters_counter; ?> de 100 personas</strong></li>
+            </ul>
+        </div>
     </div> <?php
 
     die();

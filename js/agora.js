@@ -24,19 +24,15 @@ jQuery(document).ready(function() {
                 },
                 class: "vote-button vote-no",
                 icons: {
-                    primary: "dashicons dashicons-no"
+                    primary: "dashicons dashicons-no-alt"
                 }
             },
             {
-                text: "Me abstengo",
+                text: "Abstenerme",
                 click: function () {
 
                 },
                 class: "vote-button vote-abstain",
-                icons: {
-                    primary: "dashicons dashicons-minus"
-                }
-
             }
         ],
         'title'         : "Detalle de la propuesta",
@@ -60,43 +56,29 @@ jQuery(document).ready(function() {
         }, function (response) {
             jQuery("#vote-detail").html(response);
 
-            jQuery("#vote-chart").highcharts({
-                chart: {
-                    animation: false,
-                    plotBackgroundColor: null,
-                    plotBorderWidth: null,
-                    plotShadow: false
+            var data = [
+                {
+                    value: 50,
+                    color: "rgb(118, 191, 49)",
+                    highlight: "rgb(86, 165, 11)",
+                    label: "A favor"
                 },
-                title: {
-                    text: ''
+                {
+                    value: 300,
+                    color:"rgb(203, 35, 35)",
+                    highlight: "rgb(204, 0, 0)",
+                    label: "En contra"
                 },
-                subTitle: {
-                    text: ''
-                },
-                tooltip: {
-                    enabled: false
-                },
-                plotOptions: {
-                    pie: {
-                        allowPointSelect: true,
-                        cursor: 'pointer',
-                        dataLabels: {
-                            enabled: false
-                        },
-                        showInLegend: false
-                    }
-                },
-                credits: {
-                    enabled: false
-                },
-                series: [{
-                    type: 'pie',
-                    data: [
-                        ['Firefox',   45.0],
-                    ]
-                }]
-            });
+                {
+                    value: 100,
+                    color: "#666",
+                    highlight: "#444",
+                    label: "Abstenciones"
+                }
+            ];
 
+            var context = jQuery("#voting_chart").get(0).getContext("2d");
+            var myPieChart = new Chart(context).Pie(data);
         });
     });
 
