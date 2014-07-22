@@ -18,13 +18,17 @@ jQuery(document).ready(function() {
         'position'      : { my: "top", at: "top", of: jQuery("#wpwrap") }
     });
 
-    jQuery(".row-title").click(function(event) {
+    var row = is_admin == "yes" ? jQuery('.row-title') : jQuery('tr.type-vote');
+
+    row.click(function(event) {
         event.preventDefault();
         detail.dialog('open');
 
+        var post_id = is_admin == "yes" ? jQuery(this).attr('href').match(/post=(\d+)/)[1] : jQuery(this).attr('id').match(/post-(\d+)/)[1];
+
         jQuery.post(ajaxurl, {
             action: 'show_vote',
-            href  : jQuery(this).attr('href'),
+            post_id  : post_id,
             countdown: moment("20140820", "YYYYMMDD").countdown().toString()
         }, function (response) {
             jQuery("#vote-detail").html(response);

@@ -61,7 +61,8 @@ function create_vote() {
                 'edit_publish_posts' => 'edit_publish_votes',
                 'read_post' => 'read_votes',
                 'read_private_posts' => 'read_private_votes',
-                'delete_post' => 'delete_vote'
+                'delete_posts' => 'delete_votes',
+                'delete_published_posts' => 'delete_published_votes'
             ),
             'capability_type' => array( 'vote', 'votes' )
         )
@@ -81,7 +82,8 @@ function agora_subscriber_capabilities() {
         'edit_published_votes',
         'read_votes',
         'read_private_votes',
-        'delete_vote'
+        'delete_votes',
+        'delete_published_votes'
     );
 
     foreach ($caps as $cap) {
@@ -96,6 +98,8 @@ function agora_subscriber_capabilities() {
 
     if ( in_array( 'subscriber', $current_user->roles ) ) {
         remove_submenu_page( 'edit.php?post_type=vote', 'post-new.php?post_type=vote' );
+
+        wp_localize_script( 'agora', 'is_admin', false );
     }
 }
 
@@ -207,12 +211,18 @@ add_filter('manage_edit-vote_columns' , 'agora_columns', 10, 1);
 add_action( 'admin_enqueue_scripts', 'agora_admin_scripts');
 
 function agora_admin_scripts() {
+    global $current_user;
+
     wp_register_script( 'highcharts', plugins_url( 'js/highcharts.js', __FILE__ ) );
     wp_register_script( 'moment', plugins_url( 'js/moment.js', __FILE__ ) );
     wp_register_script( 'countdown', plugins_url( 'js/countdown.min.js', __FILE__ ) );
     wp_register_script( 'moment-countdown', plugins_url( 'js/moment-countdown.min.js', __FILE__ ), array( 'moment', 'countdown' ) );
     wp_enqueue_script ( 'agora', plugins_url('js/agora.js', __FILE__), array( 'moment-countdown', 'jquery-ui-dialog', 'highcharts' ) );
     wp_enqueue_style ( 'wp-jquery-ui-dialog' );
+
+    $is_admin = in_array( 'administrator', $current_user->roles ) ? "yes" : "no";
+
+    wp_localize_script('agora', 'is_admin', $is_admin );
 }
 
 add_filter('views_edit-vote', function($args) { ?>
@@ -224,9 +234,7 @@ add_filter('views_edit-vote', function($args) { ?>
 function agora_show_vote() {
     global $wpdb;
 
-    preg_match("/post=(\d+)/", $_POST['href'], $vote_id);
-
-    $vote_id = intval($vote_id[1]);
+    $vote_id = intval( $_POST['post_id'] );
     $user_id = sha1( get_current_user_id() );
     $vote = get_post($vote_id);
     $agora_campaigns = $wpdb->prefix . "agora_campaigns";
