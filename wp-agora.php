@@ -385,7 +385,7 @@ function agora_check_if_allowed( $user_id = null ) {
     $signup_date    = new DateTime( $signup_time );
     $current_date   = new DateTime( current_time( 'Y-m-d H:i:s' ) );
     $interval       = $signup_date->diff( $current_date );
-    $has_req_time   = $interval->days >= 1 ? true : false;
+    $has_req_time   = $interval->days >= 60 ? true : false;
     $has_req_count  = false;
     $voter_meta     = get_user_meta( $user_id, 'can_vote', true );
     $can_vote       = $voter_meta == "yes" ? true : false;
