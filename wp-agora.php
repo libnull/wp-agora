@@ -256,7 +256,7 @@ function agora_admin_scripts() {
 add_filter('views_edit-vote', function( $args ) { ?>
     <div id="vote-detail"></div>
 
-    <?php if ( agora_check_if_allowed() ) : ?>
+    <?php if ( ! agora_check_if_allowed() ) : ?>
         <div class="error below-h2">
             <p>No tienes permisos para votar</p>
         </div><?php
@@ -355,7 +355,7 @@ function agora_get_vote_status() {
     $is_poll         = is_array( $vote_options ) ? true : false;
     $is_allowed      = agora_check_if_allowed( get_current_user_id(), $vote_deadline );
     $has_ended       = agora_check_if_ended( $vote_deadline );
-    $vote_status     = array( 'is_allowed' => $is_allowed, 'has_voted' => "", 'is_poll' => "", 'has_ended' => $has_ended );
+    $vote_status     = array( 'is_allowed' => $is_allowed, 'has_voted' => "", 'is_poll' => "", 'has_ended' => $has_ended, 'deadline' => $vote_deadline );
 
     if ( is_array( $voters_registry ) ) {
         $vote_status['has_voted'] = in_array( $user_id, $voters_registry ) ? true : false;

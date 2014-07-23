@@ -92,7 +92,7 @@ jQuery(document).ready(function() {
                 }
             ];
 
-            if (status.is_allowed || !status.has_ended) {
+            if (status.is_allowed && !status.has_ended) {
                 var buttons_actions   = status.is_poll ? buttons_submit : buttons_three_actions,
                     buttons_available = status.has_voted ? button_disabled : buttons_actions;
             } else {
@@ -118,7 +118,7 @@ jQuery(document).ready(function() {
             jQuery.post(ajaxurl, {
                 action: 'show_vote',
                 post_id  : post_id,
-                countdown: moment("201407222359", "YYYYMMDDHHii").fromNow()
+                countdown: moment(status.deadline, "YYYY-MM-DD HH:ii:ss").fromNow()
             }, function (response) {
                 jQuery("#vote-detail").html(response);
 
