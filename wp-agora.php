@@ -20,9 +20,15 @@ register_activation_hook( __FILE__, 'agora_create_tables' );
 
 register_deactivation_hook( __FILE__, 'agora_drop_tables' );
 
+register_deactivation_hook( __FILE__, 'agora_delete_schedules' );
+
 add_action( 'init', 'create_vote' );
 
 add_action( 'load-edit.php', 'agora_force_excerpt' );
+
+function agora_delete_schedules() {
+    wp_clear_scheduled_hook( 'close_voting' );
+}
 
 function agora_force_excerpt() {
     $_REQUEST['mode'] = 'excerpt';
@@ -264,6 +270,8 @@ function agora_show_vote() {
     $voters_counter  = sizeof( $voters_registry );
     $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
     $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
+    $diff_time =  strtotime( $vote_deadline ) - strtotime( current_time( 'Y-m-d H:i:s' ) );
+    $times_up  = $diff_time <= 0 ? true : false;
     $countdown = $_POST['countdown'];
     $is_poll   = is_array( $vote_options ) ? "true" : "false";
 
@@ -301,7 +309,13 @@ function agora_show_vote() {
         <canvas id="voting_chart" width="250" height="250"></canvas>
         <div id="agora-vote-dates-counter">
             <div class="vote-deadline">
-                <h3>Finaliza <?php echo $countdown; ?></h3>
+                <h3>
+                    <?php if ( $times_up ) : ?>
+                    La votación ha finalizado
+                    <?php else : ?>
+                    Finaliza <?php echo $countdown; ?>
+                    <?php endif; ?>
+                </h3>
             </div>
             <ul>
                 <li><span class="dashicons dashicons-calendar"></span> Publicada el <strong><?php echo $vote->post_date_gmt; ?></strong></li>
@@ -326,8 +340,10 @@ function agora_get_vote_status() {
     $agora_campaigns = $wpdb->prefix . "agora_campaigns";
     $voters_registry = maybe_unserialize( $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
     $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
+    $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
     $is_poll         = is_array( $vote_options ) ? true : false;
-    $vote_status     = array( 'has_voted' => "", 'is_poll' => "" );
+    $is_allowed      = agora_check_if_allowed( get_current_user_id(), $vote_deadline );
+    $vote_status     = array( 'is_allowed' => $is_allowed, 'has_voted' => "", 'is_poll' => "" );
 
     if ( is_array( $voters_registry ) ) {
         $vote_status['has_voted'] = in_array( $user_id, $voters_registry ) ? true : false;
@@ -342,15 +358,21 @@ function agora_get_vote_status() {
 
 function agora_check_if_allowed( $user_id, $deadline_time ) {
     $voter_registry = get_user_meta( $user_id, 'submited_votes_count', true );
-    $current_date   = new DateTime( current_time( 'timestamp' ) );
+    $current_date   = new DateTime( current_time( 'Y-m-d H:i:s' ) );
     $deadline_date  = new DateTime( $deadline_time );
     $interval       = $current_date->diff( $deadline_date );
     $has_req_time   = $interval->days >= 60 ? true : false;
     $has_req_count  = $voter_registry != null && $voter_registry >= 3 ? true : false;
     $user_object    = get_user_by( 'id', $user_id );
     $is_admin_user  = in_array( "administrator", $user_object->roles ) ? true : false;
+    $voter_meta     = get_user_meta( $user_id, 'can_vote', true );
+    $can_vote       = $voter_meta == "yes" ? true : false;
 
-    return $has_req_count && $has_req_time && !$is_admin_user ? true : false;
+    if ( $can_vote ) {
+        return true;
+    } else {
+        return $has_req_count && $has_req_time && !$is_admin_user ? true : false;
+    }
 }
 
 function agora_submit_vote() {

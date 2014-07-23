@@ -79,14 +79,25 @@ jQuery(document).ready(function() {
                     }
                 }
             ],
-            button_disabled = [
+            button_already_voted = [
                 {
                     text: "Ya has votado",
                     disabled: true
                 }
             ],
-            buttons_actions = status.is_poll ? buttons_submit : buttons_three_actions,
-            buttons_available = status.has_voted ? button_disabled : buttons_actions;
+            button_not_allowed = [
+                {
+                    text: "No puedes votar",
+                    disabled: true
+                }
+            ];
+
+            if (status.is_allowed) {
+                var buttons_actions   = status.is_poll ? buttons_submit : buttons_three_actions,
+                    buttons_available = status.has_voted ? button_disabled : buttons_actions;
+            } else {
+                var buttons_available = button_not_allowed;
+            }
 
             detail.dialog({
                 'dialogClass'   : 'wp-dialog',
