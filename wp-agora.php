@@ -28,6 +28,11 @@ function agora_force_excerpt() {
     $_REQUEST['mode'] = 'excerpt';
 }
 
+function agora_count_voters() {
+    $count_users = count_users();
+    return $count_users['avail_roles']['subscriber'];
+}
+
 function agora_admin_init() {
     wp_register_style( 'agora_styles', plugins_url('css/agora.css', __FILE__) );
     wp_enqueue_style('agora_styles');
@@ -230,7 +235,7 @@ function agora_admin_scripts() {
 
     $is_admin = in_array( 'administrator', $current_user->roles ) ? "yes" : "no";
 
-    wp_localize_script('agora', 'is_admin', $is_admin );
+    wp_localize_script( 'agora', 'is_admin', $is_admin );
 }
 
 add_filter('views_edit-vote', function( $args ) { ?>
@@ -285,7 +290,7 @@ function agora_show_vote() {
             <ul>
                 <li><span class="dashicons dashicons-calendar"></span> Publicada el <strong><?php echo $vote->post_date_gmt; ?></strong></li>
                 <li><span class="dashicons dashicons-clock"></span> Abierta hasta el <strong><?php echo $vote_deadline; ?></strong></li>
-                <li><span class="dashicons dashicons-groups"></span> Han votado <strong><?php echo $voters_counter; ?> de 100 personas</strong></li>
+                <li><span class="dashicons dashicons-groups"></span> Han votado <strong><?php echo $voters_counter; ?> de <?php echo agora_count_voters(); ?> personas</strong></li>
             </ul>
         </div>
     </div> <?php
@@ -348,4 +353,5 @@ function agora_submit_vote() {
 }
 
 add_action( 'wp_ajax_submit_vote', 'agora_submit_vote');
+
 ?>
