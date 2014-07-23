@@ -254,7 +254,13 @@ function agora_admin_scripts() {
 }
 
 add_filter('views_edit-vote', function( $args ) { ?>
-    <div id="vote-detail"></div><?php
+    <div id="vote-detail"></div>
+
+    <?php if ( agora_check_if_allowed() ) : ?>
+        <div class="error below-h2">
+            <p>No tienes permisos para votar</p>
+        </div><?php
+    endif;
 
     return $args;
 });
@@ -270,8 +276,7 @@ function agora_show_vote() {
     $voters_counter  = sizeof( $voters_registry );
     $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
     $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
-    $diff_time =  strtotime( $vote_deadline ) - strtotime( current_time( 'Y-m-d H:i:s' ) );
-    $times_up  = $diff_time <= 0 ? true : false;
+    $has_vote_ended  = agora_check_if_ended( $vote_deadline );
     $countdown = $_POST['countdown'];
     $is_poll   = is_array( $vote_options ) ? "true" : "false";
 
@@ -310,7 +315,7 @@ function agora_show_vote() {
         <div id="agora-vote-dates-counter">
             <div class="vote-deadline">
                 <h3>
-                    <?php if ( $times_up ) : ?>
+                    <?php if ( $has_vote_ended ) : ?>
                     La votación ha finalizado
                     <?php else : ?>
                     Finaliza <?php echo $countdown; ?>
@@ -332,6 +337,12 @@ add_action( 'wp_ajax_show_vote', 'agora_show_vote');
 
 add_action( 'wp_ajax_get_vote_status', 'agora_get_vote_status');
 
+function agora_check_if_ended( $vote_deadline ) {
+    $diff_time =  strtotime( $vote_deadline ) - strtotime( current_time( 'Y-m-d H:i:s' ) );
+
+    return $diff_time <= 0 ? true : false;
+}
+
 function agora_get_vote_status() {
     global $wpdb;
 
@@ -343,7 +354,8 @@ function agora_get_vote_status() {
     $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
     $is_poll         = is_array( $vote_options ) ? true : false;
     $is_allowed      = agora_check_if_allowed( get_current_user_id(), $vote_deadline );
-    $vote_status     = array( 'is_allowed' => $is_allowed, 'has_voted' => "", 'is_poll' => "" );
+    $has_ended       = agora_check_if_ended( $vote_deadline );
+    $vote_status     = array( 'is_allowed' => $is_allowed, 'has_voted' => "", 'is_poll' => "", 'has_ended' => $has_ended );
 
     if ( is_array( $voters_registry ) ) {
         $vote_status['has_voted'] = in_array( $user_id, $voters_registry ) ? true : false;
@@ -356,22 +368,29 @@ function agora_get_vote_status() {
     die();
 }
 
-function agora_check_if_allowed( $user_id, $deadline_time ) {
-    $voter_registry = get_user_meta( $user_id, 'submited_votes_count', true );
-    $current_date   = new DateTime( current_time( 'Y-m-d H:i:s' ) );
-    $deadline_date  = new DateTime( $deadline_time );
-    $interval       = $current_date->diff( $deadline_date );
-    $has_req_time   = $interval->days >= 60 ? true : false;
-    $has_req_count  = $voter_registry != null && $voter_registry >= 3 ? true : false;
+function agora_check_if_allowed( $user_id = null, $deadline_time = null ) {
+    $user_id        = $user_id != null ? $user_id : get_current_user_id();
     $user_object    = get_user_by( 'id', $user_id );
     $is_admin_user  = in_array( "administrator", $user_object->roles ) ? true : false;
-    $voter_meta     = get_user_meta( $user_id, 'can_vote', true );
-    $can_vote       = $voter_meta == "yes" ? true : false;
 
-    if ( $can_vote ) {
-        return true;
-    } else {
-        return $has_req_count && $has_req_time && !$is_admin_user ? true : false;
+    if ( $is_admin_user )
+        return false;
+
+    if ( $deadline_time != null ) {
+        $voter_registry = get_user_meta( $user_id, 'submited_votes_count', true );
+        $current_date   = new DateTime( current_time( 'Y-m-d H:i:s' ) );
+        $deadline_date  = new DateTime( $deadline_time );
+        $interval       = $current_date->diff( $deadline_date );
+        $has_req_time   = $interval->days >= 60 ? true : false;
+        $has_req_count  = $voter_registry != null && $voter_registry >= 3 ? true : false;
+        $voter_meta     = get_user_meta( $user_id, 'can_vote', true );
+        $can_vote       = $voter_meta == "yes" ? true : false;
+
+        if ( $can_vote ) {
+            return true;
+        } else {
+            return $has_req_count && $has_req_time ? true : false;
+        }
     }
 }
 

@@ -92,7 +92,7 @@ jQuery(document).ready(function() {
                 }
             ];
 
-            if (status.is_allowed) {
+            if (status.is_allowed || !status.has_ended) {
                 var buttons_actions   = status.is_poll ? buttons_submit : buttons_three_actions,
                     buttons_available = status.has_voted ? button_disabled : buttons_actions;
             } else {
