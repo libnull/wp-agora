@@ -137,7 +137,6 @@ jQuery(document).ready(function() {
 
                 var context = jQuery("#voting_chart").get(0).getContext("2d");
                 var chart = new Chart(context).Pie(data, options);
-                chart.generateLegend();
             });
         });
 

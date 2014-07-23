@@ -168,6 +168,17 @@ function agora_deadline_box() {
 
 add_action( 'post_submitbox_misc_actions', 'agora_deadline_box' );
 
+function agora_close_voting( $vote_id ) {
+    global $wpdb;
+
+    $agora_campaigns_table = $wpdb->prefix . "agora_campaigns";
+
+    $wpdb->update( $agora_campaigns_table, array( 'open' => "no" ), array( 'vote_id' => $vote_id ) );
+}
+
+add_action( 'close_voting', 'agora_close_voting', 10, 1 );
+
+
 function agora_register_voting( $post_id, $post ) {
     global $wpdb;
 
@@ -178,12 +189,10 @@ function agora_register_voting( $post_id, $post ) {
     if ( $is_new_vote ) {
         $wpdb->insert( $agora_campaigns_table, array(
             'vote_id' => $post->ID,
-            'voters'  => maybe_serialize(array()),
-            'vote_for' => maybe_serialize(array()),
-            'vote_against' => maybe_serialize(array()),
-            'vote_abstain' => maybe_serialize(array()),
+            'open'    => "yes"
         ) );
     }
+    wp_schedule_single_event( time() + 10, 'close_voting', array( $post->ID ) );
 }
 
 add_action( 'save_post', 'agora_save_deadline' );
@@ -256,21 +265,28 @@ function agora_show_vote() {
     $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
     $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
     $countdown = $_POST['countdown'];
-    $has_voted = in_array( $user_id, $voters_registry ) ? "true" : "false";
-    $is_poll   = is_array( $vote_options ) ? "true" : "false"; ?>
+    $is_poll   = is_array( $vote_options ) ? "true" : "false";
+
+    if ( $voters_registry != null )
+        $has_voted = in_array( $user_id, $voters_registry ) ? "true" : "false";
+    else
+        $has_voted = "false";
+    ?>
 
     <div class="vote-desc">
-        <input id="vote-is-poll" type="hidden" name="vote-is-poll" value="<?php echo $is_poll; ?>" />
         <h1><?php echo $vote->post_title; ?></h1>
         <?php if ( is_array( $vote_options ) ) : ?>
             <div class="vote-options">
-                <fieldset>
-                    <?php for ( $i = 1; $i <= sizeof( $vote_options ); $i++ ) : ?>
-                    <label title="<?php echo $vote_options[$i]; ?>">
-                        <input type='radio' name='vote_chosen_option' value="<?php echo $i; ?>" /> <span><?php echo $vote_options[$i]; ?></span>
-                    </label><br />
-                    <?php endfor; ?>
-                </fieldset>
+                <form id="agora-options-form" method="post" action="<?php echo admin_url( 'admin-ajax.php' ); ?>" name="agora-options-form">
+                    <input id="agora_form_action" type="hidden" name="action" value="submit_options" />
+                    <fieldset>
+                        <?php for ( $i = 1; $i <= sizeof( $vote_options ); $i++ ) : ?>
+                        <label title="<?php echo $vote_options[$i]; ?>">
+                            <input type='radio' name='vote_chosen_option' value="<?php echo $i; ?>" /> <span><?php echo $vote_options[$i]; ?></span>
+                        </label><br />
+                        <?php endfor; ?>
+                    </fieldset>
+                </form>
             </div>
         <?php endif;
         if ( $vote->post_content != null && $vote->post_content != "" ) : ?>
@@ -324,34 +340,65 @@ function agora_get_vote_status() {
     die();
 }
 
+function agora_check_if_allowed( $user_id, $deadline_time ) {
+    $voter_registry = get_user_meta( $user_id, 'submited_votes_count', true );
+    $current_date   = new DateTime( current_time( 'timestamp' ) );
+    $deadline_date  = new DateTime( $deadline_time );
+    $interval       = $current_date->diff( $deadline_date );
+    $has_req_time   = $interval->days >= 60 ? true : false;
+    $has_req_count  = $voter_registry != null && $voter_registry >= 3 ? true : false;
+    $user_object    = get_user_by( 'id', $user_id );
+    $is_admin_user  = in_array( "administrator", $user_object->roles ) ? true : false;
+
+    return $has_req_count && $has_req_time && !$is_admin_user ? true : false;
+}
+
 function agora_submit_vote() {
     global $wpdb;
 
     $agora_campaigns   = $wpdb->prefix . "agora_campaigns";
+    $voter_user_id     = get_current_user_id();
     $vote_id           = $_POST['vote_id'];
-    $vote_decision     = "vote_" . $_POST['vote_decision'];
-    $voter_hashed_id   = sha1( get_current_user_id() );
-    $votes_row         = $wpdb->get_results( "SELECT voters, vote_for, vote_against, vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" );
-    $votes_row         = $votes_row[0];
-    $voters_unserialized = maybe_unserialize( $votes_row->voters );
-    $votes_decision_unserialized = maybe_unserialize( $votes_row->$vote_decision );
+    $vote_deadline     = get_post_meta( $vote_id, 'vote_deadline', true );
+    $is_allowed_to_vote = agora_check_if_allowed( $voter_user_id, $vote_deadline );
 
-    array_push($voters_unserialized, $voter_hashed_id );
-    array_push($votes_decision_unserialized, $voter_hashed_id );
+    if ( $is_allowed_to_vote ) {
+        $vote_decision     = "vote_" . $_POST['vote_decision'];
+        $voter_hashed_id   = sha1( $voter_user_id );
+        $votes_row         = $wpdb->get_results( "SELECT voters, vote_for, vote_against, vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" );
+        $votes_row         = $votes_row[0];
+        $voters_unserialized = maybe_unserialize( $votes_row->voters );
 
-    $voters_serialized = maybe_serialize( $voters_unserialized );
-    $votes_decision_serialized = maybe_serialize( $votes_decision_unserialized );
+        array_push($voters_unserialized, $voter_hashed_id );
 
-    $wpdb->update( 'wp_agora_campaigns', array(
-        'voters' => $voters_serialized,
-        $vote_decision => $votes_decision_serialized
-    ), array(
-        'vote_id' => $vote_id
-    ) );
+        $voters_serialized = maybe_serialize( $voters_unserialized );
+        $voters_count = sizeof( $votes_row->$vote_decision );
+
+        $wpdb->update( 'wp_agora_campaigns', array(
+            'voters' => $voters_serialized,
+            $vote_decision => $voters_count
+        ), array(
+            'vote_id' => $vote_id
+        ) );
+
+        $voter_registry = get_user_meta( $voter_user_id, 'submited_votes_count', true );
+        $has_registry = $voter_registry != null ? true : false;
+
+        if ( $has_registry ) {
+            $votes_count = $voter_registry + 1;
+
+            update_user_meta( $voter_user_id, 'submited_votes_count', $votes_count );
+        } else {
+            add_user_meta( $voter_user_id, 'submited_votes_count', 1, true );
+        }
+    }
 
     die();
 }
 
 add_action( 'wp_ajax_submit_vote', 'agora_submit_vote');
 
+function agora_calculate_quorum() {
+
+}
 ?>

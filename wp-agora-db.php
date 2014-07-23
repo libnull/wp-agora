@@ -15,10 +15,12 @@ function agora_create_tables() {
     $create_agora_campaigns_sql = "CREATE TABLE $agora_campaigns (
       camp_id bigint(20) NOT NULL AUTO_INCREMENT,
       vote_id bigint(20) NOT NULL,
-      voters text DEFAULT NULL,
-      vote_for text DEFAULT NULL,
-      vote_against text DEFAULT NULL,
-      vote_abstain text DEFAULT NULL,
+      voters longtext DEFAULT NULL,
+      vote_for bigint(20) DEFAULT NULL,
+      vote_against bigint(20) DEFAULT NULL,
+      vote_abstain bigint(20) DEFAULT NULL,
+      vote_options text DEFAULT NULL,
+      open varchar(3) DEFAULT NULL,
       PRIMARY KEY (camp_id),
       UNIQUE KEY vote_id (vote_id)
     );";
