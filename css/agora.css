@@ -1,15 +1,18 @@
-#minor-publishing-actions,
-.misc-pub-section.misc-pub-post-status,
-.misc-pub-section.misc-pub-visibility,
-.tablenav.top,
-#normal-sortables,
-#edit-slug-box {
+body.post-type-vote #minor-publishing-actions,
+body.post-type-vote .misc-pub-section.misc-pub-post-status,
+body.post-type-vote .misc-pub-section.misc-pub-visibility,
+body.post-type-vote .tablenav.top,
+body.post-type-vote .add-new-h2,
+body.post-type-vote #publishing-action,
+body.post-type-vote #normal-sortables,
+body.post-type-vote #edit-slug-box {
     display: none;
 }
+.ui-dialog {
+    position: fixed !important;
+}
 .vote-desc {
-    border-right: 1px solid #ddd;
     float: left;
-    padding-right: 25px;
     width: 500px;
 }
 .vote-desc h1 {
@@ -19,8 +22,10 @@
     text-align: justify;
 }
 .vote-tools {
+    border-left: 1px solid #ddd;
     position: fixed;
     margin-left: 555px;
+    padding-left: 25px;
     width: 300px;
 }
 #voting_chart {
@@ -81,4 +86,8 @@
 #agora-vote-options-wrapper input {
     font-size: 18px;
     height: 35px;
+}
+.not-allowed-to-vote {
+    color: #DD3D36;
+    margin-right: 5px;
 }

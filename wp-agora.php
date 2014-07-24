@@ -74,6 +74,7 @@ function create_vote() {
                 'read_post' => 'read_votes',
                 'read_private_posts' => 'read_private_votes',
                 'delete_posts' => 'delete_votes',
+                'delete_others_posts' => 'delete_others_votes',
                 'delete_published_posts' => 'delete_published_votes'
             ),
             'capability_type' => array( 'vote', 'votes' )
@@ -95,6 +96,7 @@ function agora_subscriber_capabilities() {
         'read_votes',
         'read_private_votes',
         'delete_votes',
+        'delete_others_votes',
         'delete_published_votes'
     );
 
@@ -109,9 +111,12 @@ function agora_subscriber_capabilities() {
     $subscriber->remove_cap( 'edit_published_votes' );
 
     if ( in_array( 'subscriber', $current_user->roles ) ) {
-        remove_submenu_page( 'edit.php?post_type=vote', 'post-new.php?post_type=vote' );
+        $user_meta = get_user_meta( $current_user->ID, 'submited_votes_count', true );
 
-        wp_localize_script( 'agora', 'is_admin', false );
+        if ( $user_meta == "" ) {
+            add_user_meta( $current_user->ID, 'submited_votes_count', 0, true );
+        }
+        remove_submenu_page( 'edit.php?post_type=vote', 'post-new.php?post_type=vote' );
     }
 }
 
@@ -259,9 +264,10 @@ add_filter('views_edit-vote', 'agora_add_custom_containers', 10, 1 );
 function agora_add_custom_containers( $args ) { ?>
     <div id="vote-detail"></div>
 
+    <?php var_dump(agora_calculate_quorum()); ?>
     <?php if ( ! agora_check_if_allowed() ) : ?>
-        <div class="error below-h2">
-            <p>No tienes permisos para votar</p>
+        <div class="agora-error error below-h2">
+            <p><span class="not-allowed-to-vote dashicons dashicons-info"></span> No tienes permisos para votar</p>
         </div><?php
     endif;
 
@@ -446,6 +452,69 @@ function agora_submit_vote() {
 add_action( 'wp_ajax_submit_vote', 'agora_submit_vote');
 
 function agora_calculate_quorum() {
+    $user_count = new WP_User_Query( array( 'role' => "Subscriber", 'meta_key' => 'can_vote', 'meta_value' => 'yes' ) );
+
+    return $user_count->get_total() / 3;
+}
+function add_action_enable() {
 
 }
+add_action( 'admin_footer-users.php', 'agora_add_bulk_user_actions' );
+add_action( 'admin_action_disable_voting', 'agora_disable_right_to_vote' );
+add_action( 'admin_action_enable_voting', 'agora_enable_right_to_vote' );
+
+function agora_add_bulk_user_actions() { ?>
+    <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            jQuery('<option>').val('enable_voting').text('Habilitar para votar')
+                .appendTo("select[name='action'], select[name='action2']");
+            jQuery('<option>').val('disable_voting').text('Deshabilitar para votar')
+                .appendTo("select[name='action'], select[name='action2']");
+        });
+    </script><?php
+}
+
+function agora_disable_right_to_vote() {
+    foreach ( $_REQUEST['users'] as $user ) {
+        $user_id = intval( $user );
+        $user_meta = get_user_meta( $user_id, "can_vote", true );
+        $user_object    = get_user_by( 'id', $user_id );
+        $is_admin_user  = in_array( "administrator", $user_object->roles ) ? true : false;
+
+        if ( ! $is_admin_user ) {
+            if ( $user_meta )
+                update_post_meta( $user_id, 'can_vote', "no" );
+            else
+                add_user_meta( $user_id, "can_vote", "no", true );
+        }
+    }
+}
+
+function agora_enable_right_to_vote() {
+    foreach ( $_REQUEST['users'] as $user ) {
+        $user_id = intval( $user );
+        $user_meta = get_user_meta( $user_id, "can_vote", true );
+        $user_object    = get_user_by( 'id', $user_id );
+        $is_admin_user  = in_array( "administrator", $user_object->roles ) ? true : false;
+
+        if ( ! $is_admin_user ) {
+            if ( $user_meta )
+                update_post_meta( $user_id, 'can_vote', "yes" );
+            else
+                add_user_meta( $user_id, "can_vote", "yes", true );
+        }
+    }
+}
+
+function agora_add_rights_profile_field( $user ) {
+    $user_meta = get_user_meta( $user->ID, 'can_vote', true );
+    $can_vote_text = $user_meta == "yes" ? "Puede votar" : "No puede votar"; ?>
+    <h3>Votaciones</h3>
+    <p><strong><?php echo $can_vote_text; ?></strong></p><?php
+}
+
+add_action( 'profile_personal_options', 'agora_add_rights_profile_field' );
+
+add_action( 'edit_user_profile', 'agora_add_rights_profile_field' );
+
 ?>
