@@ -122,21 +122,22 @@ jQuery(document).ready(function() {
             }, function (response) {
                 jQuery("#vote-detail").html(response);
 
+                console.log(status.count_for);
                 var data = [
                     {
-                        value: 300,
+                        value: status.count_for,
                         color: "rgb(118, 191, 49)",
                         highlight: "rgb(86, 165, 11)",
                         label: "A favor"
                     },
                     {
-                        value: 50,
+                        value: status.count_against,
                         color:"rgb(203, 35, 35)",
                         highlight: "rgb(204, 0, 0)",
                         label: "En contra"
                     },
                     {
-                        value: 10,
+                        value: status.count_abstain,
                         color: "#666",
                         highlight: "#444",
                         label: "Abstenciones"
