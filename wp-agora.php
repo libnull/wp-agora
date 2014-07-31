@@ -264,7 +264,6 @@ add_filter('views_edit-vote', 'agora_add_custom_containers', 10, 1 );
 function agora_add_custom_containers( $args ) { ?>
     <div id="vote-detail"></div>
 
-    <?php var_dump(agora_calculate_quorum()); ?>
     <?php if ( ! agora_check_if_allowed() ) : ?>
         <div class="agora-error error below-h2">
             <p><span class="not-allowed-to-vote dashicons dashicons-info"></span> No tienes permisos para votar</p>
