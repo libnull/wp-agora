@@ -516,4 +516,28 @@ add_action( 'profile_personal_options', 'agora_add_rights_profile_field' );
 
 add_action( 'edit_user_profile', 'agora_add_rights_profile_field' );
 
+add_filter('manage_users_columns', 'agora_add_votes_count_status');
+
+function agora_add_votes_count_status($columns) {
+    $columns['votes_count'] = 'Votaciones';
+    $columns['can_vote'] = "Puede votar";
+    return $columns;
+}
+
+add_action('manage_users_custom_column',  'agora_show_votes_count_column_status', 10, 3);
+
+function agora_show_votes_count_column_status($value, $column_name, $user_id) {
+    $votes_count = get_user_meta( $user_id, 'submited_votes_count', true );
+    $votes_count = $votes_count == "" ? "0" : $votes_count;
+    $can_vote    = get_user_meta( $user_id, 'can_vote', true );
+    $can_vote    = $can_vote == "no" || $can_vote == "" ? "No" : "Sí";
+
+	if ( 'votes_count' == $column_name )
+		return $votes_count;
+
+	if ( 'can_vote' == $column_name )
+		return $can_vote;
+
+    return $value;
+}
 ?>

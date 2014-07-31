@@ -3,7 +3,7 @@ body.post-type-vote .misc-pub-section.misc-pub-post-status,
 body.post-type-vote .misc-pub-section.misc-pub-visibility,
 body.post-type-vote .tablenav.top,
 body.post-type-vote .add-new-h2,
-body.post-type-vote #publishing-action,
+/*body.post-type-vote #publishing-action,*/
 body.post-type-vote #normal-sortables,
 body.post-type-vote #edit-slug-box {
     display: none;
