@@ -122,33 +122,34 @@ jQuery(document).ready(function() {
             }, function (response) {
                 jQuery("#vote-detail").html(response);
 
-                console.log(status.count_for);
-                var data = [
-                    {
-                        value: status.count_for,
-                        color: "rgb(118, 191, 49)",
-                        highlight: "rgb(86, 165, 11)",
-                        label: "A favor"
-                    },
-                    {
-                        value: status.count_against,
-                        color:"rgb(203, 35, 35)",
-                        highlight: "rgb(204, 0, 0)",
-                        label: "En contra"
-                    },
-                    {
-                        value: status.count_abstain,
-                        color: "#666",
-                        highlight: "#444",
-                        label: "Abstenciones"
-                    }
-                ],
-                options = {
-                    percentageInnerCutout: 50
-                };
+                if (jQuery("#voting_chart").length > 0) {
+                    var data = [
+                        {
+                            value: status.count_for,
+                            color: "rgb(118, 191, 49)",
+                            highlight: "rgb(86, 165, 11)",
+                            label: "A favor"
+                        },
+                        {
+                            value: status.count_against,
+                            color:"rgb(203, 35, 35)",
+                            highlight: "rgb(204, 0, 0)",
+                            label: "En contra"
+                        },
+                        {
+                            value: status.count_abstain,
+                            color: "#666",
+                            highlight: "#444",
+                            label: "Abstenciones"
+                        }
+                    ],
+                    options = {
+                        percentageInnerCutout: 50
+                    };
 
-                var context = jQuery("#voting_chart").get(0).getContext("2d");
-                var chart = new Chart(context).Pie(data, options);
+                    var context = jQuery("#voting_chart").get(0).getContext("2d");
+                    var chart = new Chart(context).Pie(data, options);
+                }
             });
         });
 

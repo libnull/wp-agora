@@ -2,8 +2,6 @@ body.post-type-vote #minor-publishing-actions,
 body.post-type-vote .misc-pub-section.misc-pub-post-status,
 body.post-type-vote .misc-pub-section.misc-pub-visibility,
 body.post-type-vote .tablenav.top,
-body.post-type-vote .add-new-h2,
-/*body.post-type-vote #publishing-action,*/
 body.post-type-vote #normal-sortables,
 body.post-type-vote #edit-slug-box {
     display: none;
@@ -90,4 +88,9 @@ body.post-type-vote #edit-slug-box {
 .not-allowed-to-vote {
     color: #DD3D36;
     margin-right: 5px;
+}
+.invalid {
+    background-color: #DD3D36 !important;
+    color: #fff;
+    font-weight: bold;
 }

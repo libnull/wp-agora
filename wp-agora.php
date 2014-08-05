@@ -293,8 +293,15 @@ function agora_show_vote() {
         $has_voted = in_array( $user_id, $voters_registry ) ? "true" : "false";
     else
         $has_voted = "false";
+
+    $is_invalid_campaign = agora_campaign_is_valid( $voters_counter );
     ?>
 
+    <?php if ( $has_vote_ended && $is_invalid_campaign ) : ?>
+    <div class="agora-error error invalid">
+        <p><span class="not-allowed-to-vote dashicons dashicons-info"></span> La votación no alcanzó el cuórum requerido.</p>
+    </div>
+    <?php endif; ?>
     <div class="vote-desc">
         <h1><?php echo $vote->post_title; ?></h1>
         <?php if ( is_array( $vote_options ) ) : ?>
@@ -313,14 +320,15 @@ function agora_show_vote() {
         <?php endif;
         if ( $vote->post_content != null && $vote->post_content != "" ) : ?>
             <div id="agora-vote-desc-wrapper">
-                <h3>Argumentación</h3>
                 <?php echo wpautop($vote->post_content); ?>
             </div>
         <?php endif; ?>
     </div>
 
     <div class="vote-tools">
-        <canvas id="voting_chart" width="250" height="250"></canvas>
+        <?php if ( $has_vote_ended ) : ?>
+            <canvas id="voting_chart" width="250" height="250"></canvas>
+        <?php endif; ?>
         <div id="agora-vote-dates-counter">
             <div class="vote-deadline">
                 <h3>
@@ -467,9 +475,14 @@ function agora_calculate_quorum() {
 
     return $user_count->get_total() / 3;
 }
-function add_action_enable() {
+
+function agora_campaign_is_valid( $votes_submitted ) {
+    $cuorum_required = agora_calculate_quorum();
+
+    return $cuorum_required >= $votes_submitted ? true : false;
 
 }
+
 add_action( 'admin_footer-users.php', 'agora_add_bulk_user_actions' );
 add_action( 'admin_action_disable_voting', 'agora_disable_right_to_vote' );
 add_action( 'admin_action_enable_voting', 'agora_enable_right_to_vote' );
