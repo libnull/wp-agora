@@ -1,6 +1,6 @@
 jQuery(document).ready(function() {
     var detail = jQuery("#vote-detail"),
-        row = is_admin == "yes" ? jQuery('.row-title') : jQuery('tr.type-vote');
+        row = is_admin == "yes" ? jQuery('.row-title') : jQuery('.vote-row');
 
     row.click(function(event) {
         event.preventDefault();

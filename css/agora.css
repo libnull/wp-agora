@@ -94,3 +94,6 @@ body.post-type-vote #edit-slug-box {
     color: #fff;
     font-weight: bold;
 }
+.column-post_date_gmt {
+    width: 10%;
+}

@@ -16,6 +16,8 @@ require_once( 'wp-agora-metabox-options.php' );
 
 require_once( 'wp-agora-metabox-editor.php' );
 
+require_once( 'wp-agora-table.php' );
+
 register_activation_hook( __FILE__, 'agora_create_tables' );
 
 register_deactivation_hook( __FILE__, 'agora_drop_tables' );
@@ -24,14 +26,8 @@ register_deactivation_hook( __FILE__, 'agora_delete_schedules' );
 
 add_action( 'init', 'create_vote' );
 
-add_action( 'load-edit.php', 'agora_force_excerpt' );
-
 function agora_delete_schedules() {
     wp_clear_scheduled_hook( 'close_voting' );
-}
-
-function agora_force_excerpt() {
-    $_REQUEST['mode'] = 'excerpt';
 }
 
 function agora_count_voters() {
