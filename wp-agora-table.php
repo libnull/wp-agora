@@ -1,5 +1,5 @@
 <?php
-if(!class_exists('WP_List_Table')){
+if ( !class_exists( 'WP_List_Table' ) ){
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
 
@@ -12,9 +12,9 @@ class Agora_Table extends WP_List_Table {
         $this->votes_data = $wpdb->get_results("SELECT ID, post_title, post_content, post_date_gmt FROM $wpdb->posts WHERE post_type='vote' AND post_status='publish'", ARRAY_A);
 
         parent::__construct( array(
-            'singular'  => 'vote',     //singular name of the listed records
-            'plural'    => 'votes',    //plural name of the listed records
-            'ajax'      => false        //does this table support ajax?
+            'singular'  => 'vote',
+            'plural'    => 'votes',
+            'ajax'      => false
         ) );
     }
 
@@ -28,7 +28,8 @@ class Agora_Table extends WP_List_Table {
     }
 
     function column_title($item){
-        return sprintf('<strong><a href="#" class="row-title vote-title">%1$s</a></strong><p>%2$s</p>',
+        return sprintf('<strong><a href="%1$s" class="row-title vote-title">%2$s</a></strong><p>%3$s</p>',
+            "post=" . $item['ID'],
             $item['post_title'],
             wp_trim_words( $item['post_content'] )
         );
@@ -73,7 +74,7 @@ class Agora_Table extends WP_List_Table {
 
         $current_page = $this->get_pagenum();
         $total_items = count($data);
-        $data = array_slice($data,(($current_page-1)*$per_page),$per_page);
+        $data = array_slice( $data,( ( $current_page-1)*$per_page ),$per_page);
         $this->items = $data;
         $this->set_pagination_args( array(
             'total_items' => $total_items,
@@ -83,16 +84,12 @@ class Agora_Table extends WP_List_Table {
     }
 }
 
-function agora_add_menu(){
-    add_menu_page( 'Votaciones', 'Votaciones', 'read', 'agora', 'render_page', 'dashicons-groups', 25);
-}
-
-add_action( 'admin_menu', 'agora_add_menu' );
-
 function render_page() {
 
     $testListTable = new Agora_Table();
     $testListTable->prepare_items(); ?>
+
+    <div id="vote-detail"></div>
 
     <div class="wrap">
         <h2>Votaciones</h2>

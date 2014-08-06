@@ -1,12 +1,12 @@
 jQuery(document).ready(function() {
     var detail = jQuery("#vote-detail"),
-        row = is_admin == "yes" ? jQuery('.row-title') : jQuery('.vote-row');
+        row = is_admin == "yes" ? jQuery('.row-title') : jQuery('.vote-title');
 
     row.click(function(event) {
         event.preventDefault();
 
         var clicked_element = jQuery(this),
-            post_id = is_admin == "yes" ? jQuery(this).attr('href').match(/post=(\d+)/)[1] : jQuery(this).attr('id').match(/post-(\d+)/)[1];
+            post_id = jQuery(this).attr('href').match(/post=(\d+)/)[1];
 
         jQuery.post(ajaxurl, {
             action: "get_vote_status",

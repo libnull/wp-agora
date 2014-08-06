@@ -10,13 +10,13 @@ defined('ABSPATH') or die("No script kiddies please!");
  * Author URI: http://github.com/libnull
  * License: GPL3
  */
+
 require_once( 'wp-agora-db.php' );
 
 require_once( 'wp-agora-metabox-options.php' );
 
 require_once( 'wp-agora-metabox-editor.php' );
 
-require_once( 'wp-agora-table.php' );
 
 register_activation_hook( __FILE__, 'agora_create_tables' );
 
@@ -37,11 +37,21 @@ function agora_count_voters() {
 }
 
 function agora_admin_init() {
+    if ( is_subscriber() )
+        require_once( 'wp-agora-table.php' );
+
     wp_register_style( 'agora_styles', plugins_url('css/agora.css', __FILE__) );
     wp_enqueue_style('agora_styles');
 }
 
 add_action( 'admin_init', 'agora_admin_init' );
+
+function agora_add_menu_for_subscriber(){
+    if ( is_subscriber() )
+        add_menu_page( 'Votaciones', 'Votaciones', 'read', 'agora', 'render_page', 'dashicons-groups' );
+}
+
+add_action( 'admin_menu', 'agora_add_menu_for_subscriber' );
 
 function create_vote() {
     register_post_type( 'vote',
@@ -60,51 +70,12 @@ function create_vote() {
             'publicly_quearyable' => false,
             'menu_icon' => 'dashicons-groups',
             'supports' => array( 'title', 'revisions' ),
-            'map_meta_cap' => true,
-            'capabilities' => array(
-                'edit_post' => 'edit_vote',
-                'edit_posts' => 'edit_votes',
-                'edit_others_posts' => 'edit_other_votes',
-                'publish_posts' => 'publish_votes',
-                'edit_publish_posts' => 'edit_publish_votes',
-                'read_post' => 'read_votes',
-                'read_private_posts' => 'read_private_votes',
-                'delete_posts' => 'delete_votes',
-                'delete_others_posts' => 'delete_others_votes',
-                'delete_published_posts' => 'delete_published_votes'
-            ),
-            'capability_type' => array( 'vote', 'votes' )
         )
     );
 }
 
 function agora_subscriber_capabilities() {
     global $current_user;
-
-    $admin = get_role( 'administrator' );
-    $subscriber = get_role( 'subscriber' );
-    $caps = array(
-        'edit_vote',
-        'edit_votes',
-        'edit_other_votes',
-        'publish_votes',
-        'edit_published_votes',
-        'read_votes',
-        'read_private_votes',
-        'delete_votes',
-        'delete_others_votes',
-        'delete_published_votes'
-    );
-
-    foreach ($caps as $cap) {
-        $admin->add_cap( $cap );
-    }
-
-    $subscriber->add_cap( 'edit_vote' );
-    $subscriber->add_cap( 'edit_votes' );
-    $subscriber->add_cap( 'read_votes' );
-    $subscriber->remove_cap( 'publish_votes' );
-    $subscriber->remove_cap( 'edit_published_votes' );
 
     if ( in_array( 'subscriber', $current_user->roles ) ) {
         $user_meta = get_user_meta( $current_user->ID, 'submited_votes_count', true );
@@ -117,6 +88,12 @@ function agora_subscriber_capabilities() {
 }
 
 add_action( 'admin_init', 'agora_subscriber_capabilities');
+
+function is_subscriber() {
+    global $current_user;
+
+    return in_array( "subscriber", $current_user->roles ) ? true : false;
+}
 
 function agora_remove_meta_boxes() {
     remove_meta_box('slugdiv', 'vote', 'core');
@@ -258,13 +235,7 @@ function agora_admin_scripts() {
 add_filter('views_edit-vote', 'agora_add_custom_containers', 10, 1 );
 
 function agora_add_custom_containers( $args ) { ?>
-    <div id="vote-detail"></div>
-
-    <?php if ( ! agora_check_if_allowed() ) : ?>
-        <div class="agora-error error below-h2">
-            <p><span class="not-allowed-to-vote dashicons dashicons-info"></span> No tienes permisos para votar</p>
-        </div><?php
-    endif;
+    <div id="vote-detail"></div><?php
 
     return $args;
 
@@ -553,12 +524,27 @@ function agora_show_votes_count_column_status($value, $column_name, $user_id) {
     $can_vote    = get_user_meta( $user_id, 'can_vote', true );
     $can_vote    = $can_vote == "no" || $can_vote == "" ? "No" : "Sí";
 
-	if ( 'votes_count' == $column_name )
-		return $votes_count;
+    if ( 'votes_count' == $column_name )
+        return $votes_count;
 
-	if ( 'can_vote' == $column_name )
-		return $can_vote;
+    if ( 'can_vote' == $column_name )
+        return $can_vote;
 
     return $value;
 }
+
+function agora_notify_cant_vote() {
+    $current_screen = get_current_screen();
+
+    if ( $current_screen->id == "toplevel_page_agora" || $current_screen->id == "edit-vote" ) :
+        if ( ! agora_check_if_allowed() ) : ?>
+            <div class="agora-error error">
+                <p><span class="not-allowed-to-vote dashicons dashicons-info"></span> No tienes permisos para votar</p>
+            </div><?php
+        endif;
+    endif;
+}
+
+add_action( 'admin_notices', 'agora_notify_cant_vote' );
+
 ?>
