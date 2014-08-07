@@ -539,12 +539,10 @@ function agora_notify_cant_vote() {
     if ( $current_screen->id == "toplevel_page_agora" || $current_screen->id == "edit-vote" ) :
         if ( ! agora_check_if_allowed() ) : ?>
             <div class="agora-error error">
-                <p><span class="not-allowed-to-vote dashicons dashicons-info"></span> No tienes permisos para votar</p>
+                <p><span class="not-allowed-to-vote dashicons dashicons-info"></span> <strong>No tienes permisos para votar</strong>. Para solicitar que se te dé habilitación para votar, comunicate con <a href="mailto:votaciones@ir.uy">votaciones@ir.uy</a></p>
             </div><?php
         endif;
     endif;
 }
 
 add_action( 'admin_notices', 'agora_notify_cant_vote' );
-
-?>
