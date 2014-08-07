@@ -16,6 +16,7 @@ function agora_create_tables() {
       camp_id bigint(20) NOT NULL AUTO_INCREMENT,
       vote_id bigint(20) NOT NULL,
       voters longtext DEFAULT NULL,
+      voters_count bigint(20) DEFAULT NULL,
       vote_for bigint(20) DEFAULT NULL,
       vote_against bigint(20) DEFAULT NULL,
       vote_abstain bigint(20) DEFAULT NULL,

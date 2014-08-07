@@ -170,10 +170,12 @@ function agora_register_voting( $post_id, $post ) {
     $agora_campaigns_table = $wpdb->prefix . "agora_campaigns";
     $check_vote_existence = $wpdb->get_results( "SELECT vote_id FROM $agora_campaigns_table WHERE vote_id=$post->ID" );
     $is_new_vote = $check_vote_existence == null ? true : false;
+    $count_voters = new WP_User_Query( array( 'role' => "Subscriber", 'meta_key' => 'can_vote', 'meta_value' => 'yes' ) );
 
     if ( $is_new_vote ) {
         $wpdb->insert( $agora_campaigns_table, array(
             'vote_id' => $post->ID,
+            'voters_count' => intval( $count_voters->get_total() ),
             'open'    => "yes"
         ) );
     }
@@ -342,8 +344,8 @@ function agora_get_vote_status() {
     $count_for       = intval( $wpdb->get_var( "SELECT vote_for FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
     $count_against   = intval( $wpdb->get_var( "SELECT vote_against FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
     $count_abstain   = intval( $wpdb->get_var( "SELECT vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
-    $count_voters    = new WP_User_Query( array( 'role' => "Subscriber", 'meta_key' => 'can_vote', 'meta_value' => 'yes' ) );
-    $count_remain    = intval( $count_voters->get_total() ) - ( $count_for + $count_against + $count_abstain );
+    $count_voters    = intval( $wpdb->get_var( "SELECT voters_count FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
+    $count_remain    = $count_voters - ( $count_for + $count_against + $count_abstain );
     $vote_status     = array(
         'is_allowed' => $is_allowed,
         'has_voted' => "",
