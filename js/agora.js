@@ -141,6 +141,12 @@ jQuery(document).ready(function() {
                             color: "#666",
                             highlight: "#444",
                             label: "Abstenciones"
+                        },
+                        {
+                            value: status.count_voters,
+                            color: "#ccc",
+                            highlight: "#bbb",
+                            label: "Total de votantes"
                         }
                     ],
                     options = {

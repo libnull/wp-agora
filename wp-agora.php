@@ -4,7 +4,7 @@ defined('ABSPATH') or die("No script kiddies please!");
 /**
  * Plugin Name: WP Agora
  * Plugin URI: http://github.com/libnull/wp-agora
- * Description: A plugin to vote.
+ * Description: A plugin to vote
  * Version: 1.0
  * Author: Eduardo Delgaldo
  * Author URI: http://github.com/libnull
@@ -293,9 +293,9 @@ function agora_show_vote() {
     </div>
 
     <div class="vote-tools">
-        <?php if ( $has_vote_ended ) : ?>
+        <?php //if ( $has_vote_ended ) : ?>
             <canvas id="voting_chart" width="250" height="250"></canvas>
-        <?php endif; ?>
+        <?php //endif; ?>
         <div id="agora-vote-dates-counter">
             <div class="vote-deadline">
                 <h3>
@@ -342,6 +342,8 @@ function agora_get_vote_status() {
     $count_for       = $wpdb->get_var( "SELECT vote_for FROM $agora_campaigns WHERE vote_id=$vote_id" );
     $count_against   = $wpdb->get_var( "SELECT vote_against FROM $agora_campaigns WHERE vote_id=$vote_id" );
     $count_abstain   = $wpdb->get_var( "SELECT vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" );
+    $count_voters    = new WP_User_Query( array( 'role' => "Subscriber", 'meta_key' => 'can_vote', 'meta_value' => 'yes' ) );
+    $count_voters    = $count_voters->get_total();
     $vote_status     = array(
         'is_allowed' => $is_allowed,
         'has_voted' => "",
@@ -350,7 +352,8 @@ function agora_get_vote_status() {
         'deadline' => $vote_deadline,
         'count_for' => intval( $count_for ),
         'count_against' => intval( $count_against ),
-        'count_abstain' => intval( $count_abstain )
+        'count_abstain' => intval( $count_abstain ),
+        'count_voters'  => intval( $count_voters )
     );
 
     if ( is_array( $voters_registry ) ) {
