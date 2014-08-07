@@ -339,21 +339,21 @@ function agora_get_vote_status() {
     $is_poll         = is_array( $vote_options ) ? true : false;
     $is_allowed      = agora_check_if_allowed();
     $has_ended       = agora_check_if_ended( $vote_deadline );
-    $count_for       = $wpdb->get_var( "SELECT vote_for FROM $agora_campaigns WHERE vote_id=$vote_id" );
-    $count_against   = $wpdb->get_var( "SELECT vote_against FROM $agora_campaigns WHERE vote_id=$vote_id" );
-    $count_abstain   = $wpdb->get_var( "SELECT vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" );
+    $count_for       = intval( $wpdb->get_var( "SELECT vote_for FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
+    $count_against   = intval( $wpdb->get_var( "SELECT vote_against FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
+    $count_abstain   = intval( $wpdb->get_var( "SELECT vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
     $count_voters    = new WP_User_Query( array( 'role' => "Subscriber", 'meta_key' => 'can_vote', 'meta_value' => 'yes' ) );
-    $count_voters    = $count_voters->get_total();
+    $count_remain    = intval( $count_voters->get_total() ) - ( $count_for + $count_against + $count_abstain );
     $vote_status     = array(
         'is_allowed' => $is_allowed,
         'has_voted' => "",
         'is_poll' => "",
         'has_ended' => $has_ended,
         'deadline' => $vote_deadline,
-        'count_for' => intval( $count_for ),
-        'count_against' => intval( $count_against ),
-        'count_abstain' => intval( $count_abstain ),
-        'count_voters'  => intval( $count_voters )
+        'count_for' => $count_for,
+        'count_against' => $count_against,
+        'count_abstain' => $count_abstain,
+        'count_remain'  => $count_remain
     );
 
     if ( is_array( $voters_registry ) ) {
