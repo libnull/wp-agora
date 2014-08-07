@@ -293,9 +293,9 @@ function agora_show_vote() {
     </div>
 
     <div class="vote-tools">
-        <?php //if ( $has_vote_ended ) : ?>
+        <?php if ( $has_vote_ended ) : ?>
             <canvas id="voting_chart" width="250" height="250"></canvas>
-        <?php //endif; ?>
+        <?php endif; ?>
         <div id="agora-vote-dates-counter">
             <div class="vote-deadline">
                 <h3>
