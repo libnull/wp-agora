@@ -252,6 +252,7 @@ function agora_show_vote() {
     $agora_campaigns = $wpdb->prefix . "agora_campaigns";
     $voters_registry = maybe_unserialize( $wpdb->get_var( "SELECT voters FROM $agora_campaigns WHERE vote_id=$vote_id" ) );
     $voters_counter  = sizeof( $voters_registry );
+    $voters_quorum   = agora_calculate_quorum();
     $vote_options    = get_post_meta( $vote_id, 'vote_options', true );
     $vote_deadline   = get_post_meta( $vote_id, 'vote_deadline', true );
     $has_vote_ended  = agora_check_if_ended( $vote_deadline );
@@ -312,6 +313,7 @@ function agora_show_vote() {
                 <li><span class="dashicons dashicons-calendar"></span> Publicada el <strong><?php echo $vote->post_date_gmt; ?></strong></li>
                 <li><span class="dashicons dashicons-clock"></span> Abierta hasta el <strong><?php echo $vote_deadline; ?></strong></li>
                 <li><span class="dashicons dashicons-groups"></span> Han votado <strong><?php echo $voters_counter; ?> de <?php echo agora_count_voters(); ?> personas</strong></li>
+                <li><span class="dashicons dashicons-groups"></span> Cuórum requerido: <strong><?php echo $voters_quorum; ?> personas</strong></li>
             </ul>
         </div>
     </div> <?php
@@ -445,7 +447,7 @@ add_action( 'wp_ajax_submit_vote', 'agora_submit_vote');
 function agora_calculate_quorum() {
     $user_count = new WP_User_Query( array( 'role' => "Subscriber", 'meta_key' => 'can_vote', 'meta_value' => 'yes' ) );
 
-    return $user_count->get_total() / 3;
+    return ceil( $user_count->get_total() / 3 );
 }
 
 function agora_campaign_is_valid( $votes_submitted ) {

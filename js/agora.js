@@ -12,6 +12,7 @@ jQuery(document).ready(function() {
             action: "get_vote_status",
             vote_id: post_id
         }, function (response) {
+            console.log(response);
             var status = JSON.parse(response);
 
             var buttons_three_actions = [
