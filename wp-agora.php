@@ -65,6 +65,7 @@ function create_vote() {
                 'not_found' => __( 'No se encontraron votaciones' )
             ),
             'public' => false,
+            'show_ui' => true,
             'has_archive' => true,
             'exclude_from_search' => true,
             'publicly_quearyable' => false,
