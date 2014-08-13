@@ -313,7 +313,7 @@ function agora_show_vote() {
             <ul>
                 <li><span class="dashicons dashicons-calendar"></span> Publicada el <strong><?php echo $vote->post_date_gmt; ?></strong></li>
                 <li><span class="dashicons dashicons-clock"></span> Abierta hasta el <strong><?php echo $vote_deadline; ?></strong></li>
-                <li><span class="dashicons dashicons-groups"></span> Han votado <strong><?php echo $voters_counter; ?> de <?php echo agora_count_voters(); ?> personas</strong></li>
+                <li><span class="dashicons dashicons-groups"></span> Han votado <strong><span class="counter"><?php echo $voters_counter; ?></span> de <?php echo agora_count_voters(); ?> personas</strong></li>
                 <li><span class="dashicons dashicons-groups"></span> Cuórum requerido: <strong><?php echo $voters_quorum; ?> personas</strong></li>
             </ul>
         </div>
@@ -358,7 +358,8 @@ function agora_get_vote_status() {
         'count_for' => $count_for,
         'count_against' => $count_against,
         'count_abstain' => $count_abstain,
-        'count_remain'  => $count_remain
+        'count_remain'  => $count_remain,
+        'count_total'   => $voters_registry
     );
 
     if ( is_array( $voters_registry ) ) {
@@ -414,7 +415,7 @@ function agora_submit_vote() {
         $voter_hashed_id   = sha1( $voter_user_id );
         $votes_row         = $wpdb->get_results( "SELECT voters, vote_for, vote_against, vote_abstain FROM $agora_campaigns WHERE vote_id=$vote_id" );
         $votes_row         = $votes_row[0];
-        $voters_unserialized = maybe_unserialize( $votes_row->voters );
+        $voters_unserialized = $votes_row->voters != null ? maybe_unserialize( $votes_row->voters ) : array();
 
         array_push($voters_unserialized, $voter_hashed_id );
 

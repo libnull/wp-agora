@@ -12,7 +12,6 @@ jQuery(document).ready(function() {
             action: "get_vote_status",
             vote_id: post_id
         }, function (response) {
-            console.log(response);
             var status = JSON.parse(response);
 
             var buttons_three_actions = [
@@ -24,7 +23,8 @@ jQuery(document).ready(function() {
                             vote_id: post_id,
                             vote_decision: "for"
                         }, function(response) {
-                            detail.dialog('option', 'buttons', button_disabled);
+                            detail.dialog('option', 'buttons', button_already_voted);
+                            jQuery('span.counter').html(status.count_total + 1);
                         });
                     },
                     class: "vote-button vote-yes",
@@ -40,7 +40,7 @@ jQuery(document).ready(function() {
                             vote_id: post_id,
                             vote_decision: 'against'
                         }, function(response) {
-                            detail.dialog('option', 'buttons', button_disabled);
+                            detail.dialog('option', 'buttons', button_already_voted);
                         });
                     },
                     class: "vote-button vote-no",
@@ -56,7 +56,7 @@ jQuery(document).ready(function() {
                             vote_id: post_id,
                             vote_decision: 'abstain'
                         }, function(response) {
-                            detail.dialog('option', 'buttons', button_disabled);
+                            detail.dialog('option', 'buttons', button_already_voted);
                         });
                     },
                     class: "vote-button vote-abstain",
@@ -71,7 +71,8 @@ jQuery(document).ready(function() {
                             vote_id: post_id,
                             vote_decision: "submit"
                         }, function(response) {
-                            detail.dialog('option', 'buttons', button_disabled);
+                            detail.dialog('option', 'buttons', button_already_voted);
+
                         });
                     },
                     class: "vote-button vote-yes",
@@ -95,7 +96,7 @@ jQuery(document).ready(function() {
 
             if (status.is_allowed && !status.has_ended) {
                 var buttons_actions   = status.is_poll ? buttons_submit : buttons_three_actions,
-                    buttons_available = status.has_voted ? button_disabled : buttons_actions;
+                    buttons_available = status.has_voted ? button_already_voted : buttons_actions;
             } else {
                 var buttons_available = button_not_allowed;
             }
